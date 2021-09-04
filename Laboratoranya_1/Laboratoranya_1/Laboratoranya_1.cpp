@@ -2,25 +2,26 @@
 #include <iostream>
 #include <conio.h> // Для считывания клавиши
 #include <clocale> // Для русской локализации
+#include <vector> // Для Динамического массива 
 
 using namespace std;
 
 // Труба
 struct Pipe
 {
-    int id; // Идентификатор трубы
+    unsigned int id; // Идентификатор трубы
     double lenght; // Длина трубы
     double diameter; // Диаметр трубы
-    bool signRepair; // Признак "в ремонте"
+    string signRepair; // Признак "в ремонте"
 };
 
 // Компрессорная станция
 struct CompressorStation
 {
-    int id; // Идентификатор трубы
+    unsigned int id; // Идентификатор трубы
     string name; // Название станции
-    int numberWorkshops; // Количество цехов в станции
-    int effectiveness; // Эффективность станции
+    unsigned int numberWorkshops; // Количество цехов в станции
+    unsigned int effectiveness; // Эффективность станции
 };
 
 /// <summary>
@@ -38,14 +39,105 @@ void Gotomenu()
         << "\t 7. Загрузить" << endl
         << "       Esc. Выход" << endl;
 }
+/// <summary>
+/// Метод добавляет трубу
+/// </summary>
+/// <param name="pipes">Массив труб</param>
+void AddPipe(vector <Pipe>& pipes)
+{   
+    system("cls");
+    // Буферные переменные
+    int key;
+    pipes.resize(pipes.size() + 1);
+    // Добавление id
+    while (true)
+    {
+        cout << " id: ";
+        try
+        {
+            cin >> pipes[pipes.size() - 1].id;
+            break;
+        }
+        catch (const std::exception&)
+        {
+            cout << "\n Введите целое положительное число!";
+        }
+     
+    }
+    // Добавление длины
+    while (true)
+    {
+        cout << " Длина: ";
+        try
+        {
+            cin >> pipes[pipes.size() - 1].lenght;
+            if (pipes[pipes.size() - 1].lenght > 0)
+            {
+                break;
+            }
+            else
+            {
+                cout << "\n Длина трубы должна быть строго > 0";
+            }
+        }
+        catch (const std::exception&)
+        {
+            cout << "\n Введите действительно положительно число!";
+        }
+
+    }
+    // Добавление диаметра
+    while (true)
+    {
+        cout << " Диаметр: ";
+        try
+        {
+            cin >> pipes[pipes.size() - 1].diameter;
+            if (pipes[pipes.size() - 1].diameter > 0)
+            {
+                break;
+            }
+            else
+            {
+                cout << "\n Диаметр трубы должен быть строго > 0";
+            }
+        }
+        catch (const std::exception&)
+        {
+            cout << "Введите действительное положительно число!" << endl;
+        }
+
+    }
+    // Добавление признака "в ремонте"
+    while (true)
+    {
+        cout << " Нажмите 'n' если труба в ремонте или 'y' если труба исправна" << endl;
+        key = _getch();
+        if ((key == 110) || (key == 226))
+        {
+            pipes[pipes.size() - 1].signRepair = "В ремонте";
+            break;
+        }
+        else if ((key == 121) || (key == 173))
+        {
+            pipes[pipes.size() - 1].signRepair = "Исправна";
+            break;
+        }
+        else
+        {
+            cout << "\n Нажмите на одну из предложенных клавиш!";
+        }
+    }
+}
 
 int main()
-{  
-    //Включение русского языка в консоли
+{   // Создание Массива труб и массива КС-ок
+    vector <Pipe> pipes; pipes.resize(0); vector <CompressorStation> compressorStations; compressorStations.resize(0);
+    // Включение русского языка в консоли
     setlocale(LC_CTYPE, "rus");
     // Буферные переменные
     bool flag1 = false, flag2 = false;
-    //Очистка консоли, вывод начального меню и считывание клавиши
+    // Работа с меню
     while (true)
     {
         system("cls");
@@ -56,7 +148,8 @@ int main()
         {
             switch (key)
             {
-            case 49:    // клавиша 1
+            case 49: // Добавить трубу на клавишу 1
+                AddPipe(pipes);
                 flag1 = true;
                 break;
             case 50:    // клавиша 2
