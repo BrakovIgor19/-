@@ -40,7 +40,8 @@ void Gotomenu()
 }
 
 int main()
-{
+{  
+
     setlocale(LC_CTYPE, "rus");
     Gotomenu();
     _getch();
