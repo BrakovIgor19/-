@@ -10,7 +10,7 @@ using namespace std;
 // Труба
 struct Pipe
 {
-    unsigned int id; // Идентификатор трубы
+    int id; // Идентификатор трубы
     double lenght; // Длина трубы
     double diameter; // Диаметр трубы
     string signRepair; // Признак "в ремонте"
@@ -18,10 +18,11 @@ struct Pipe
 // Компрессорная станция 
 struct CompressorStation
 {
-    unsigned int id; // Идентификатор трубы
+    int id; // Идентификатор трубы
     string name; // Название станции
-    unsigned int numberWorkshops; // Количество цехов в станции
-    unsigned int effectiveness; // Эффективность станции
+    int numberWorkshops; // Количество цехов в станции
+    int numberWorkshopsOperation; // Количество цехов в работе
+    int effectiveness; // Эффективность станции
 };
 /// <summary>
 /// Метод проверет строку на цифры
@@ -48,7 +49,7 @@ bool СheckingNumbersStringInt(string str)
     return true;
 }
 /// <summary>
-/// Метод проверяет строку на число с плавающей точкой
+///Метод проверяет строку на число с плавающей точкой
 /// </summary>
 /// <param name="str">Строка</param>
 /// <returns>Возвращает правду если строку можно распарсить в даблы</returns>
@@ -108,7 +109,6 @@ void AddPipe(vector <Pipe>& pipes)
         getline(cin, buf);
         if (СheckingNumbersStringInt(buf))
         {
-            cout << "\n";
             pipes[pipes.size() - 1].id = stoi(buf);
             break;            
         }
@@ -124,7 +124,6 @@ void AddPipe(vector <Pipe>& pipes)
         getline(cin, buf);
         if (СheckingNumbersStringDouble(buf))
         {
-            cout << "\n";
             pipes[pipes.size() - 1].lenght = stod(buf);
             break;
         }
@@ -140,7 +139,6 @@ void AddPipe(vector <Pipe>& pipes)
         getline(cin, buf);
         if (СheckingNumbersStringDouble(buf))
         {
-            cout << "\n";
             pipes[pipes.size() - 1].id = stod(buf);
             break;
         }
@@ -152,7 +150,7 @@ void AddPipe(vector <Pipe>& pipes)
     // Добавление признака "в ремонте"
     while (true)
     {
-        cout << " Нажмите 'n' если труба в ремонте или 'y' если труба исправна" << endl;
+        cout << "\n Нажмите 'n' если труба в ремонте или 'y' если труба исправна" << endl;
         key = _getch();
         if ((key == 110) || (key == 226))
         {
@@ -166,7 +164,101 @@ void AddPipe(vector <Pipe>& pipes)
         }
         else
         {
-            cout << "\n Нажмите на одну из предложенных клавиш!";
+            cout << " Нажмите на одну из предложенных клавиш!";
+        }
+    }
+}
+/// <summary>
+/// Метод добавляет компрессорную станцию
+/// </summary>
+/// <param name="pipes">Массив КС-ок</param>
+void AddCompressorStation(vector <CompressorStation>& compressorStations)
+{
+    system("cls");
+    // Буферные переменные
+    int key, buf1; string buf;
+    compressorStations.resize(compressorStations.size() + 1);
+    // Добавление id
+    while (true)
+    {
+        cout << " id: ";
+        getline(cin, buf);
+        if (СheckingNumbersStringInt(buf))
+        {
+            compressorStations[compressorStations.size() - 1].id = stoi(buf);
+            break;
+        }
+        else
+        {
+            cout << " Введите целое положительное число! \n";
+        }
+    }
+    // Добавление названия
+    while (true)
+    {
+        cout << " Название: ";
+        getline(cin, buf);
+        if (buf.size() > 0)
+        {
+            compressorStations[compressorStations.size() - 1].name = buf;
+            break;
+        }
+        else
+        {
+            cout << " Введите название!\n";
+        }
+    }
+    // Добавление количества цехов
+    while (true)
+    {
+        cout << " Количество цехов: ";
+        getline(cin, buf);
+        if (СheckingNumbersStringInt(buf))
+        {
+            compressorStations[compressorStations.size() - 1].numberWorkshops = stoi(buf);
+            break;
+        }
+        else
+        {
+            cout << " Введите целое положительное число! \n";
+        }
+    }
+    // Добавление количества цехов в работе
+    while (true)
+    {
+        cout << " Количество цехов в работе: ";
+        getline(cin, buf);
+        if (СheckingNumbersStringInt(buf))
+        {
+            buf1 = stoi(buf);
+            if (buf1 <= compressorStations[compressorStations.size() - 1].numberWorkshops)
+            {
+                compressorStations[compressorStations.size() - 1].numberWorkshopsOperation = buf1;
+                break;
+            }
+            else
+            {
+                cout << " Количество рабочих цехов должно быть меньше либо равняться количеству всех цехов компрессорной станции!\n";
+            }
+        }
+        else
+        {
+            cout << " Введите целое положительное число! \n";
+        }
+    }
+    // Добавление эффективности
+    while (true)
+    {
+        cout << " Эффективность станции: ";
+        getline(cin, buf);
+        if (СheckingNumbersStringInt(buf))
+        {
+            compressorStations[compressorStations.size() - 1].effectiveness = stoi(buf);
+            break;
+        }
+        else
+        {
+            cout << " Введите целое положительное число! \n";
         }
     }
 }
@@ -193,7 +285,8 @@ int main()
                 AddPipe(pipes);
                 flag1 = true;
                 break;
-            case 50:    // клавиша 2
+            case 50: // Добавить комрессорную станцию на клавишу 2
+                AddCompressorStation(compressorStations);
                 flag1 = true;
                 break;
             case 51:    // клавиша 3
