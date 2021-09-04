@@ -2,8 +2,9 @@
 #include <iostream>
 #include <conio.h> // Для считывания клавиши
 #include <clocale> // Для русской локализации
-#include <vector> // Для Динамического массива 
-
+#include <vector> // Для динамического массива
+#include <sstream> // Для getline
+#include <windows.h> // Для парса стринга в инты или даблы
 using namespace std;
 
 // Труба
@@ -14,8 +15,7 @@ struct Pipe
     double diameter; // Диаметр трубы
     string signRepair; // Признак "в ремонте"
 };
-
-// Компрессорная станция
+// Компрессорная станция 
 struct CompressorStation
 {
     unsigned int id; // Идентификатор трубы
@@ -23,7 +23,59 @@ struct CompressorStation
     unsigned int numberWorkshops; // Количество цехов в станции
     unsigned int effectiveness; // Эффективность станции
 };
-
+/// <summary>
+/// Метод проверет строку на цифры
+/// </summary>
+/// <param name="">Строка для проверки</param>
+/// <returns>Возвращает правду если все цифры и неправду если хотя бы один символ строки не число</returns>
+bool СheckingNumbersStringInt(string str)
+{
+    if ((str.size() == 0) || (str[0] == '0'))
+    {
+        return false;
+    }
+    for (int i = 0; i < str.size(); ++i)
+    {        
+        if (isdigit(str[i]))
+        {
+            continue;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return true;
+}
+/// <summary>
+/// Метод проверяет строку на число с плавающей точкой
+/// </summary>
+/// <param name="str">Строка</param>
+/// <returns>Возвращает правду если строку можно распарсить в даблы</returns>
+bool СheckingNumbersStringDouble(string str)
+{
+    if ((str.size() == 0) || (str[0] == '0'))
+    {
+        return false;
+    }
+    int buf = 0;
+    for (int i = 0; i < str.size(); ++i)
+    {
+        if ((isdigit(str[i]) || (str[i] == '.')) && (buf < 2) && (str[0] != '.'))
+        {
+            if (str[i] == '.')
+            {
+                ++buf;
+            }
+            continue;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return true;
+}
 /// <summary>
 /// Метод для перехода на страницу с меню 
 /// </summary>
@@ -47,66 +99,55 @@ void AddPipe(vector <Pipe>& pipes)
 {   
     system("cls");
     // Буферные переменные
-    int key;
+    int key; string buf;
     pipes.resize(pipes.size() + 1);
     // Добавление id
     while (true)
     {
         cout << " id: ";
-        try
+        getline(cin, buf);
+        if (СheckingNumbersStringInt(buf))
         {
-            cin >> pipes[pipes.size() - 1].id;
-            break;
+            cout << "\n";
+            pipes[pipes.size() - 1].id = stoi(buf);
+            break;            
         }
-        catch (const std::exception&)
+        else
         {
-            cout << "\n Введите целое положительное число!";
-        }
-     
+            cout << " Введите целое положительное число! \n";
+        } 
     }
     // Добавление длины
     while (true)
     {
         cout << " Длина: ";
-        try
+        getline(cin, buf);
+        if (СheckingNumbersStringDouble(buf))
         {
-            cin >> pipes[pipes.size() - 1].lenght;
-            if (pipes[pipes.size() - 1].lenght > 0)
-            {
-                break;
-            }
-            else
-            {
-                cout << "\n Длина трубы должна быть строго > 0";
-            }
+            cout << "\n";
+            pipes[pipes.size() - 1].lenght = stod(buf);
+            break;
         }
-        catch (const std::exception&)
+        else
         {
-            cout << "\n Введите действительно положительно число!";
+            cout << " Введите вещественное положительное число! \n";
         }
-
     }
     // Добавление диаметра
     while (true)
     {
         cout << " Диаметр: ";
-        try
+        getline(cin, buf);
+        if (СheckingNumbersStringDouble(buf))
         {
-            cin >> pipes[pipes.size() - 1].diameter;
-            if (pipes[pipes.size() - 1].diameter > 0)
-            {
-                break;
-            }
-            else
-            {
-                cout << "\n Диаметр трубы должен быть строго > 0";
-            }
+            cout << "\n";
+            pipes[pipes.size() - 1].id = stod(buf);
+            break;
         }
-        catch (const std::exception&)
+        else
         {
-            cout << "Введите действительное положительно число!" << endl;
+            cout << " Введите вещественное положительное число! \n";
         }
-
     }
     // Добавление признака "в ремонте"
     while (true)
