@@ -41,10 +41,58 @@ void Gotomenu()
 
 int main()
 {  
-
+    //Включение русского языка в консоли
     setlocale(LC_CTYPE, "rus");
-    Gotomenu();
-    _getch();
+    // Буферные переменные
+    bool flag1 = false, flag2 = false;
+    //Очистка консоли, вывод начального меню и считывание клавиши
+    while (true)
+    {
+        system("cls");
+        Gotomenu();
+        int key = _getch();
+        //Проверяем нажатую клавишу
+        while (true)
+        {
+            switch (key)
+            {
+            case 49:    // клавиша 1
+                flag1 = true;
+                break;
+            case 50:    // клавиша 2
+                flag1 = true;
+                break;
+            case 51:    // клавиша 3
+                flag1 = true;
+                break;
+            case 52:    // клавиша 4
+                flag1 = true;
+                break;
+            case 53:    // клавиша 5
+                flag1 = true;
+                break;
+            case 54:    // клавиша 6
+                flag1 = true;
+                break;
+            case 55:    // клавиша 7
+                flag1 = true;
+                break;
+            case 27:    // клавиша Escape
+                flag1 = true, flag2 = true;
+                break;
+            default:
+                cout << "Нажмите на одну из предложенных клавиш!" << endl;
+            }
+            if (flag1)
+            {
+                break;
+            }
+        }
+        if (flag2)
+        {
+            break;
+        }
+    }
     return 0;
 }
 
