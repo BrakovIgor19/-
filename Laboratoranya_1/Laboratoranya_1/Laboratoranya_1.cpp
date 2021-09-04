@@ -139,7 +139,7 @@ void AddPipe(vector <Pipe>& pipes)
         getline(cin, buf);
         if (СheckingNumbersStringDouble(buf))
         {
-            pipes[pipes.size() - 1].id = stod(buf);
+            pipes[pipes.size() - 1].diameter = stod(buf);
             break;
         }
         else
@@ -263,13 +263,23 @@ void AddCompressorStation(vector <CompressorStation>& compressorStations)
     }
 }
 
+void ShowAllPipes(vector <Pipe> pipes)
+{
+    cout << "\t\t\tТрубы" << endl;
+    cout << " Номер трубы" << "\tid" << "\tДлина" << "\t\tДиаметр" << "\t\tПризнак в ремонте" << endl;
+    for (int i = 0; i < pipes.size(); ++i)
+    {
+        cout << "   " << i + 1 << "\t\t" << pipes[i].id << "\t" << pipes[i].lenght << "\t\t" << pipes[i].diameter << "\t\t" << pipes[i].signRepair << endl;
+    }
+}
+
 int main()
 {   // Создание Массива труб и массива КС-ок
     vector <Pipe> pipes; pipes.resize(0); vector <CompressorStation> compressorStations; compressorStations.resize(0);
     // Включение русского языка в консоли
     setlocale(LC_CTYPE, "rus");
     // Буферные переменные
-    bool flag1 = false, flag2 = false;
+    bool flag1 = false, flag2 = false; int buf;
     // Работа с меню
     while (true)
     {
@@ -289,8 +299,23 @@ int main()
                 AddCompressorStation(compressorStations);
                 flag1 = true;
                 break;
-            case 51:    // клавиша 3
-                flag1 = true;
+            case 51:    // Просмотр всех объектов на клавишу 3
+                system("cls");
+                ShowAllPipes(pipes);
+                cout << "\n\n\n Нажмите Escape чтобы вернуть в меню";
+                while (true)
+                {
+                    buf = _getch();
+                    if (buf == 27)
+                    {
+                        flag1 = true;
+                        break;
+                    }
+                    else
+                    {
+                        cout << "\n Нажмите Escape для выхода!";
+                    }
+                }                
                 break;
             case 52:    // клавиша 4
                 flag1 = true;
