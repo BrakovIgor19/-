@@ -3,10 +3,30 @@
 #include <conio.h> // Для считывания клавиши
 #include <clocale> // Для русской локализации
 #include <vector> // Для динамического массива
-#include <sstream> // Для getline
-#include <windows.h> // Для парса стринга в инты или даблы
+#include <sstream> // Для getline()
+#include <windows.h> // Для парса стринга в инты или даблы, для скрывания курсора
 #include <fstream> // Для работы с файлами
 using namespace std;
+
+enum ConsoleColor
+{
+    Black = 0,
+    Blue = 1,
+    Green = 2,
+    Cyan = 3,
+    Red = 4,
+    Magenta = 5,
+    Brown = 6,
+    LightGray = 7,
+    DarkGray = 8,
+    LightBlue = 9,
+    LightGreen = 10,
+    LightCyan = 11,
+    LightRed = 12,
+    LightMagenta = 13,
+    Yellow = 14,
+    White = 15
+};
 
 // Труба
 struct Pipe
@@ -77,6 +97,44 @@ bool СheckingNumbersStringDouble(string str)
         }
     }
     return true;
+}
+/// <summary>
+/// Метод скрывает курсор
+/// </summary>
+/// <param name="showFlag">True - мигать, False - скрыть</param>
+void ShowConsoleCursor(bool showFlag)
+{
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    CONSOLE_CURSOR_INFO     cursorInfo;
+
+    GetConsoleCursorInfo(out, &cursorInfo);
+    cursorInfo.bVisible = showFlag; // set the cursor visibility
+    SetConsoleCursorInfo(out, &cursorInfo);
+}
+/// <summary>
+/// Метод изменяет цвет текста и фона
+/// </summary>
+/// <param name="text">Цвет текста</param>
+/// <param name="background">Цвет заднего фона</param>
+void ChangeConsoleColor(int text, int background)
+{
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE); //Получение дескриптора консоли
+    SetConsoleTextAttribute(hStdOut, (WORD)((background << 4) | text)); //Изменение заднего фона и шрифта консоли 
+}
+void ChangeConsoleColor(int text, ConsoleColor background)
+{
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE); //Получение дескриптора консоли
+    SetConsoleTextAttribute(hStdOut, (WORD)((background << 4) | text));  //Изменение заднего фона и шрифта консоли
+}
+/// <summary>
+/// Запоминание цвета фона и текста текущей консоли
+/// </summary>
+/// <param name="pipes"></param>
+void GetConsoleColors(HANDLE& hStdOut, CONSOLE_SCREEN_BUFFER_INFO& start_attribute)
+{
+    hStdOut = GetStdHandle(STD_OUTPUT_HANDLE); // Получение дескриптора консоли
+    GetConsoleScreenBufferInfo(hStdOut, &start_attribute); // Запоминание начальных параметров
 }
 /// <summary>
 /// Метод для перехода на страницу с меню 
@@ -304,6 +362,56 @@ void ShowAllObjects(const vector <Pipe>& pipes, const vector <CompressorStation>
     ShowAllCompressionStations(compressorStations);
 }
 /// <summary>
+/// Метод для возвращения в меню
+/// </summary>
+void BackMenu()
+{
+    int buf;
+    cout << "\n\n\n Нажмите Escape чтобы вернуться в меню";
+    while (true)
+    {
+        buf = _getch();
+        if (buf == 27)
+        {
+            break;
+        }
+        else
+        {
+            cout << "\n Нажмите Escape для выхода!";
+        }
+    }
+}
+/// <summary>
+/// gotoxy для новых C++
+/// </summary>
+/// <param name="x"></param>
+/// <param name="y"></param>
+void gotoxy(int x, int y)
+{
+    COORD c = { x, y };
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
+}
+/// <summary>
+/// Узнать координату х
+/// </summary>
+/// <returns></returns>
+int getXcoord()
+{
+    CONSOLE_SCREEN_BUFFER_INFO info_x;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info_x);
+    return info_x.dwCursorPosition.X;
+}
+/// <summary>
+/// Узнать координату y
+/// </summary>
+/// <returns></returns>
+int getYcoord()
+{
+    CONSOLE_SCREEN_BUFFER_INFO info_y;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info_y);
+    return info_y.dwCursorPosition.Y;
+}
+/// <summary>
 /// Метод сохраняет данные
 /// </summary>
 /// <param name="pipes">Трубы</param>
@@ -329,13 +437,126 @@ void SaveData(const vector <Pipe>& pipes, const vector <CompressorStation>& comp
     fout.close();
 }
 
+void EditPipe(vector <Pipe>& pipes)
+{
+    bool flag1 = false; int activeMenuItem, bufActiveMenuItem, key, buf1 = 0, bufX, bufY; string buf2; const int menuItems = 4; HANDLE hStdOut;
+    CONSOLE_SCREEN_BUFFER_INFO start_attribute;
+    system("cls");
+    cout << " Количество труб: " << pipes.size() << "\n\n";
+    // Спрашиваем номер трубы и возвращаем номер трубы "buf1"
+    while (true)
+    {
+        if (pipes.size() == 0)
+        {
+            cout << " Трубы еще не подвезли!";
+            flag1 = true;
+            break;
+        }
+        cout << " Введите номер трубы: ";
+        getline(cin, buf2);
+        if (СheckingNumbersStringInt(buf2))
+        {
+            buf1 = stoi(buf2);
+            if (buf1 <= pipes.size())
+            {
+                break;
+            }
+            else
+            {
+                cout << " Введите номер трубы не превышающий количество труб!\n";
+            }
+        }
+        else
+        {
+            cout << " Введите целое положительное число! \n";
+        }
+    }
+    if (flag1)
+    {
+        BackMenu();
+    }
+    else
+    {
+        // Выводим данные по данной трубе и иструкции для пользователя 
+        system("cls");
+        cout << "\t                 Труба № " << buf1 << endl
+            << "\n\t                 id: "; bufX = getXcoord(); bufY = getYcoord(); cout << pipes[buf1 - 1].id << endl
+            << "\t              Длина: " << pipes[buf1 - 1].lenght << endl
+            << "\t            Диаметр: " << pipes[buf1 - 1].diameter << endl
+            << "\tПризнак 'в ремонте': " << pipes[buf1 - 1].signRepair << endl;
+        gotoxy(0, 8);
+        cout << "Используйте стрелки 'Вверх' и 'Вниз' для перемещения по данным" << endl
+            << "Чтобы изменить данные нажмите 'Enter' и введите данные " << endl
+            << "Чтобы изменить признак 'в ремонте' выберите этот пункт и выберите стрелками состояние " << endl
+            << "Для выхода в меню нажмите 'Escape'";
+        gotoxy(bufX, bufY);
+        activeMenuItem = bufY;
+        ShowConsoleCursor(false);
+        // Работа с данными
+        while (true)
+        {
+            // Запоминаем цвет консоли
+            GetConsoleColors(hStdOut, start_attribute);
+            bufActiveMenuItem = activeMenuItem;
+            // Перекрашиваем данную клетку
+            ChangeConsoleColor(Yellow, Blue);
+            switch (activeMenuItem)
+            {
+                case 2: cout << pipes[buf1 - 1].id; break;
+                case 3: cout << pipes[buf1 - 1].lenght; break;
+                case 4: cout << pipes[buf1 - 1].diameter; break;
+                case 5: cout << pipes[buf1 - 1].signRepair; break;
+            }
+            gotoxy(bufX, activeMenuItem);
+            // Считывание адского кода стрелки
+            key = _getch();
+            if (key == 224)
+            {
+                key = _getch();
+            }
+            // Обработа введенной клавиши
+            switch (key)
+            {
+            case 27:  flag1 = true; break; // Клавиша Escape
+            case 72:  --activeMenuItem; break; // Клавиша стрелка вверх
+            case 80:  ++activeMenuItem; break; // Клавиша стрелка вниз
+            }
+            if (flag1)
+            {
+                break;
+            }
+            // Обработка выхода за границы
+            if (activeMenuItem < bufY)
+            {
+                activeMenuItem = bufY;
+            }
+            else if (activeMenuItem > bufY + (menuItems - 1))
+            {
+                activeMenuItem = bufY + (menuItems - 1);
+            }
+            // Красим назад перед переходом и возвращаем 
+            SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
+            switch (bufActiveMenuItem)
+            {
+            case 2: cout << pipes[buf1 - 1].id; break;
+            case 3: cout << pipes[buf1 - 1].lenght; break;
+            case 4: cout << pipes[buf1 - 1].diameter; break;
+            case 5: cout << pipes[buf1 - 1].signRepair; break;
+            }
+            // Переход
+            gotoxy(bufX, activeMenuItem);
+        }
+        SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
+    }
+}
+
 int main()
 {   // Создание Массива труб и массива КС-ок
     vector <Pipe> pipes; pipes.resize(0); vector <CompressorStation> compressorStations; compressorStations.resize(0);
     // Включение русского языка в консоли
     setlocale(LC_CTYPE, "rus");
     // Буферные переменные
-    bool flag1, flag2 = false; int key, buf;
+    bool flag1, flag2 = false; int key;
     // Работа с меню
     while (true)
     {
@@ -358,22 +579,11 @@ int main()
                 break;
             case 51:    // Просмотр всех объектов на клавишу 3
                 ShowAllObjects(pipes, compressorStations);
-                cout << "\n\n\n Нажмите Escape чтобы вернуть в меню";
-                while (true)
-                {
-                    buf = _getch();
-                    if (buf == 27)
-                    {
-                        flag1 = true;
-                        break;
-                    }
-                    else
-                    {
-                        cout << "\n Нажмите Escape для выхода!";
-                    }
-                }                
+                BackMenu();
+                flag1 = true;
                 break;
-            case 52:    // клавиша 4
+            case 52:    // Редактировать трубу на клавишу 4
+                EditPipe(pipes);
                 flag1 = true;
                 break;
             case 53:    // клавиша 5
