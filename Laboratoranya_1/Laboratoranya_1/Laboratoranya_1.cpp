@@ -5,6 +5,7 @@
 #include <vector> // Для динамического массива
 #include <sstream> // Для getline
 #include <windows.h> // Для парса стринга в инты или даблы
+#include <fstream> // Для работы с файлами
 using namespace std;
 
 // Труба
@@ -55,14 +56,14 @@ bool СheckingNumbersStringInt(string str)
 /// <returns>Возвращает правду если строку можно распарсить в даблы</returns>
 bool СheckingNumbersStringDouble(string str)
 {
-    if ((str.size() == 0) || (str[0] == '0'))
+    if ((str.size() == 0) || ((str[1] == '0') && (str[0] == '0')) || (str[0] == '.'))
     {
         return false;
     }
     int buf = 0;
     for (int i = 0; i < str.size(); ++i)
     {
-        if ((isdigit(str[i]) || (str[i] == '.')) && (buf < 2) && (str[0] != '.'))
+        if ((isdigit(str[i]) || (str[i] == '.')) && (buf < 2))
         {
             if (str[i] == '.')
             {
@@ -102,6 +103,7 @@ void AddPipe(vector <Pipe>& pipes)
     // Буферные переменные
     int key; string buf;
     pipes.resize(pipes.size() + 1);
+    cout << "\tТруба №" << pipes.size() << "\n\n";
     // Добавление id
     while (true)
     {
@@ -176,8 +178,9 @@ void AddCompressorStation(vector <CompressorStation>& compressorStations)
 {
     system("cls");
     // Буферные переменные
-    int key, buf1; string buf;
+    int buf1; string buf;
     compressorStations.resize(compressorStations.size() + 1);
+    cout << "\tКомпрессорная станция №" << compressorStations.size() << "\n\n";
     // Добавление id
     while (true)
     {
@@ -262,15 +265,68 @@ void AddCompressorStation(vector <CompressorStation>& compressorStations)
         }
     }
 }
-
+/// <summary>
+/// Метод рисует вывод всех труб
+/// </summary>
+/// <param name="pipes">Массив труб</param>
 void ShowAllPipes(vector <Pipe> pipes)
 {
-    cout << "\t\t\tТрубы" << endl;
+    cout << "\n\t\t\t\tТрубы\n" << endl;
     cout << " Номер трубы" << "\tid" << "\tДлина" << "\t\tДиаметр" << "\t\tПризнак в ремонте" << endl;
     for (int i = 0; i < pipes.size(); ++i)
     {
         cout << "   " << i + 1 << "\t\t" << pipes[i].id << "\t" << pipes[i].lenght << "\t\t" << pipes[i].diameter << "\t\t" << pipes[i].signRepair << endl;
     }
+    cout << "\n";
+}
+/// <summary>
+/// Метод рисует вывод всех компрессорных станций
+/// </summary>
+/// <param name="pipes">Массив КС-ок</param>
+void ShowAllCompressionStations(vector <CompressorStation> compressorStations)
+{
+    cout << "\t\t\tКомпрессорные станции - КС\n" << endl;
+    cout << " Номер КС" << "\tid" << "    Название" << "\t\tКол-во цехов" << "\tЦехов в работе" << "\t Эффект-ть" << endl;
+    for (int i = 0; i < compressorStations.size(); ++i)
+    {
+        cout << "   " << i + 1 << "\t\t" << compressorStations[i].id << "\t" << compressorStations[i].name << "\t\t" << compressorStations[i].numberWorkshops << "\t\t" << compressorStations[i].numberWorkshopsOperation << "\t\t" << compressorStations[i].effectiveness << endl;
+    }
+    cout << "\n";
+}
+/// <summary>
+/// Метод показывает все объекты
+/// </summary>
+/// <returns></returns>
+void ShowAllObjects(const vector <Pipe>& pipes, const vector <CompressorStation>& compressorStations)
+{
+    system("cls");
+    ShowAllPipes(pipes);
+    ShowAllCompressionStations(compressorStations);
+}
+/// <summary>
+/// Метод сохраняет данные
+/// </summary>
+/// <param name="pipes">Трубы</param>
+/// <param name="compressorStations">КС-ки</param>
+void SaveData(const vector <Pipe>& pipes, const vector <CompressorStation>& compressorStations)
+{
+    ofstream fout;
+    fout.open("data.txt", ios::out);
+    fout << "\n\t\t\t\tТрубы\n" << endl;
+    fout << " Номер трубы" << "\tid" << "\tДлина" << "\t\tДиаметр" << "\t\tПризнак в ремонте" << endl;
+    for (int i = 0; i < pipes.size(); ++i)
+    {
+        fout << "   " << i + 1 << "\t\t" << pipes[i].id << "\t" << pipes[i].lenght << "\t\t" << pipes[i].diameter << "\t\t" << pipes[i].signRepair << endl;
+    }
+    fout << "\n";
+    fout << "\t\t\tКомпрессорные станции - КС\n" << endl;
+    fout << " Номер КС" << "\tid" << "    Название" << "\t\tКол-во цехов" << "\tЦехов в работе" << "\tЭффект-ть" << endl;
+    for (int i = 0; i < compressorStations.size(); ++i)
+    {
+        fout << "   " << i + 1 << "\t\t" << compressorStations[i].id << "\t" << compressorStations[i].name << "\t\t" << compressorStations[i].numberWorkshops << "\t\t" << compressorStations[i].numberWorkshopsOperation << "\t\t" << compressorStations[i].effectiveness << endl;
+    }
+    fout << "\n";
+    fout.close();
 }
 
 int main()
@@ -279,16 +335,17 @@ int main()
     // Включение русского языка в консоли
     setlocale(LC_CTYPE, "rus");
     // Буферные переменные
-    bool flag1 = false, flag2 = false; int buf;
+    bool flag1, flag2 = false; int key, buf;
     // Работа с меню
     while (true)
     {
         system("cls");
         Gotomenu();
-        int key = _getch();
+        key = _getch();
         //Проверяем нажатую клавишу
         while (true)
         {
+            flag1 = false;
             switch (key)
             {
             case 49: // Добавить трубу на клавишу 1
@@ -300,8 +357,7 @@ int main()
                 flag1 = true;
                 break;
             case 51:    // Просмотр всех объектов на клавишу 3
-                system("cls");
-                ShowAllPipes(pipes);
+                ShowAllObjects(pipes, compressorStations);
                 cout << "\n\n\n Нажмите Escape чтобы вернуть в меню";
                 while (true)
                 {
@@ -323,7 +379,8 @@ int main()
             case 53:    // клавиша 5
                 flag1 = true;
                 break;
-            case 54:    // клавиша 6
+            case 54:    // Сохранить все данные в файлы на клавишу 6
+                SaveData(pipes, compressorStations);
                 flag1 = true;
                 break;
             case 55:    // клавиша 7
@@ -333,7 +390,7 @@ int main()
                 flag1 = true, flag2 = true;
                 break;
             default:
-                cout << "Нажмите на одну из предложенных клавиш!" << endl;
+                flag1 = true;
             }
             if (flag1)
             {
