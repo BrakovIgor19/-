@@ -7,6 +7,7 @@
 #include <windows.h> // Для парса стринга в инты или даблы, для скрывания курсора
 #include <fstream> // Для работы с файлами
 #include <string> // Для работы со строками
+#include <dos.h> // Для Sleep()
 
 using namespace std;
 
@@ -24,6 +25,8 @@ enum Menu
 
 enum ConsoleKey
 {
+     RIGHT = 77, 
+     LEFT = 75,
      UP = 72,
      DOWN = 80,
      ESC = 27,
@@ -513,8 +516,9 @@ void SaveData(const vector <Pipe>& pipes, const vector <KC>& KC)
 
 void EditPipe(vector <Pipe>& pipes)
 {
-    bool flag1 = false; int activeMenuItem, bufActiveMenuItem, key, bufKey, buf1 = 0, bufX, bufY; string buf2; const int menuItems = 4; HANDLE hStdOut;
+    HANDLE hStdOut;
     CONSOLE_SCREEN_BUFFER_INFO start_attribute;
+    bool flag1 = false; int activeMenuItem, bufActiveMenuItem, key, numberPipe, bufX, bufY; string buf2; const int menuItems = 4;
     system("cls");
     cout << " Количество труб: " << pipes.size() << "\n\n";
     // Спрашиваем номер трубы и возвращаем номер трубы "buf1"
@@ -530,8 +534,8 @@ void EditPipe(vector <Pipe>& pipes)
         getline(cin, buf2);
         if (СheckingNumbersStringInt(buf2))
         {
-            buf1 = stoi(buf2);
-            if (buf1 <= pipes.size())
+            numberPipe = stoi(buf2);
+            if (numberPipe <= pipes.size())
             {
                 break;
             }
@@ -553,15 +557,15 @@ void EditPipe(vector <Pipe>& pipes)
     {
         // Выводим данные по данной трубе и иструкции для пользователя 
         system("cls");
-        cout << "\t                 Труба № " << buf1 << endl
-            << "\n\t                 id: "; bufX = getXcoord(); bufY = getYcoord(); cout << pipes[buf1 - 1].id << endl
-            << "\t              Длина: " << pipes[buf1 - 1].lenght << endl
-            << "\t            Диаметр: " << pipes[buf1 - 1].diameter << endl
-            << "\tПризнак 'в ремонте': " << pipes[buf1 - 1].signRepair << endl;
+        cout << "\t                 Труба № " << numberPipe << endl
+            << "\n\t                 id: "; bufX = getXcoord(); bufY = getYcoord(); cout << pipes[numberPipe - 1].id << endl
+            << "\t              Длина: " << pipes[numberPipe - 1].lenght << endl
+            << "\t            Диаметр: " << pipes[numberPipe - 1].diameter << endl
+            << "\tПризнак 'в ремонте': " << pipes[numberPipe - 1].signRepair << endl;
         gotoxy(0, 8);
         cout << "Используйте стрелки 'Вверх' и 'Вниз' для перемещения по данным" << endl
-            << "Чтобы изменить данные нажмите 'Enter' и введите данные " << endl
-            << "Чтобы изменить признак 'в ремонте' выберите этот пункт нажмите Enter и выберите стрелками состояние " << endl
+            << "Чтобы изменить данные и ввести новые нажмите 'Enter' " << endl
+            << "Чтобы изменить признак 'в ремонте' выберите этот пункт и стрелками выберете состояние " << endl
             << "Для выхода в меню нажмите 'Escape'";
         gotoxy(bufX, bufY);
         activeMenuItem = bufY;
@@ -572,55 +576,48 @@ void EditPipe(vector <Pipe>& pipes)
             // Запоминаем цвет консоли
             GetConsoleColors(hStdOut, start_attribute);
             bufActiveMenuItem = activeMenuItem;
+
             // Перекрашиваем данную клетку
-            ChangeConsoleColor(LightCyan, Blue);
+            ChangeConsoleColor(Black, LightGreen);
             switch (activeMenuItem)
             {
-                case 2: cout << pipes[buf1 - 1].id; break;
-                case 3: cout << pipes[buf1 - 1].lenght; break;
-                case 4: cout << pipes[buf1 - 1].diameter; break;
-                case 5: cout << pipes[buf1 - 1].signRepair; break;
+                case 2: cout << pipes[numberPipe - 1].id; break;
+                case 3: cout << pipes[numberPipe - 1].lenght; break;
+                case 4: cout << pipes[numberPipe - 1].diameter; break;
+                case 5: cout << pipes[numberPipe - 1].signRepair; break;
             }
             gotoxy(bufX, activeMenuItem);
-            // Считывание адского кода стрелки
+
+            // Считывание   кода стрелки
             key = _getch();
-            if (key == 224)
+            if (key == -32)
             {
                 key = _getch();
             }
             // Обработа введенной клавиши
             switch (key)
             {
-                case 27:  flag1 = true; break; // Клавиша Escape
-                case 72:  --activeMenuItem; break; // Клавиша стрелка вверх
-                case 80:  ++activeMenuItem; break; // Клавиша стрелка вниз
-                case 13: // Клавиша Enter
+                case ESC:  flag1 = true; break; // Клавиша Escape
+                case UP:  --activeMenuItem; break; // Клавиша стрелка вверх
+                case DOWN:  ++activeMenuItem; break; // Клавиша стрелка вниз
+                case ENTER: // Клавиша Enter
                     // Вводим новые данные с проверкой
-                {   
-                    // Изменяем расцветку
-                    ChangeConsoleColor(Blue, LightCyan);
-                    switch (activeMenuItem)
-                    {
-                    case 2: cout << pipes[buf1 - 1].id; break;
-                    case 3: cout << pipes[buf1 - 1].lenght; break;
-                    case 4: cout << pipes[buf1 - 1].diameter; break;
-                    case 5: cout << pipes[buf1 - 1].signRepair; break;
-                    }
-                    gotoxy(bufX, activeMenuItem);
+                {
+
                     // Приводим к виду ввода
                     gotoxy(bufX, activeMenuItem);
+                    ChangeConsoleColor(LightGreen, Black);
                     switch (activeMenuItem)
                     {
-                        case 2: buf2 = to_string(pipes[buf1 - 1].id); break;
-                        case 3: buf2 = to_string(pipes[buf1 - 1].lenght); break;
-                        case 4: buf2 = to_string(pipes[buf1 - 1].diameter); break;
-                        case 5: buf2 = pipes[buf1 - 1].signRepair; break;
+                        case 2: buf2 = to_string(pipes[numberPipe - 1].id); break;
+                        case 3: buf2 = to_string(pipes[numberPipe - 1].lenght); break;
+                        case 4: buf2 = to_string(pipes[numberPipe - 1].diameter); break;
+                        case 5: buf2 = pipes[numberPipe - 1].signRepair; break;
                     }
-                    cout << " ";
-                    SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
-                    for (int i = 0; i < (buf2.size() - 1); ++i) { cout << " "; }
+                    for (int i = 0; i < buf2.size(); ++i) { cout << " "; }
                     gotoxy(bufX, activeMenuItem);
-                    ChangeConsoleColor(Blue, LightCyan);
+                    ChangeConsoleColor(Black, LightGreen);
+                    ShowConsoleCursor(true);
                     switch (activeMenuItem)
                     {
                     case 2:
@@ -630,22 +627,25 @@ void EditPipe(vector <Pipe>& pipes)
                             getline(cin, buf2);
                             if (СheckingNumbersStringInt(buf2))
                             {
-                                pipes[buf1 - 1].id = stoi(buf2);
+                                pipes[numberPipe - 1].id = stoi(buf2);
+                                gotoxy(bufX, activeMenuItem);
+                                ShowConsoleCursor(false);
                                 break;
                             }
                             else
                             {   // Выводим ошибку и заново делаем ввод
-                                gotoxy(bufX + 5, activeMenuItem);
+                                gotoxy(bufX + 13, activeMenuItem);
                                 SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
                                 cout << "\t Введите целое положительное число!";
-                                ChangeConsoleColor(Blue, LightCyan);
+                                ShowConsoleCursor(false);
+                                Sleep(1200);
                                 gotoxy(bufX, activeMenuItem);
-                                buf2 = to_string(pipes[buf1 - 1].id); break;
-                                cout << " ";
-                                SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
-                                for (int i = 0; i < (buf2.size() - 1); ++i) { cout << " "; }
+                                for (int i = 0; i < buf2.size() + 63; ++i) { cout << " "; }
                                 gotoxy(bufX, activeMenuItem);
-                                ChangeConsoleColor(Blue, LightCyan);
+                                ChangeConsoleColor(Black, LightGreen);
+                                cout << pipes[numberPipe - 1].id;
+                                gotoxy(bufX, activeMenuItem);
+                                break;
                             }
                         }
                         break;
@@ -656,22 +656,25 @@ void EditPipe(vector <Pipe>& pipes)
                             getline(cin, buf2);
                             if (СheckingNumbersStringDouble(buf2))
                             {
-                                pipes[buf1 - 1].lenght = stod(buf2);
+                                pipes[numberPipe - 1].lenght = stod(buf2);
+                                gotoxy(bufX, activeMenuItem);
+                                ShowConsoleCursor(false);
                                 break;
                             }
                             else
                             {   // Выводим ошибку и заново делаем ввод
-                                gotoxy(bufX + 5, activeMenuItem);
+                                gotoxy(bufX + 13, activeMenuItem);
                                 SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
                                 cout << "\t Введите вещественное положительное число!";
-                                ChangeConsoleColor(Blue, LightCyan);
+                                ShowConsoleCursor(false);
+                                Sleep(1200);
                                 gotoxy(bufX, activeMenuItem);
-                                buf2 = to_string(pipes[buf1 - 1].lenght); break;
-                                cout << " ";
-                                SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
-                                for (int i = 0; i < (buf2.size() - 1); ++i) { cout << " "; }
+                                for (int i = 0; i < buf2.size() + 63; ++i) { cout << " "; }
                                 gotoxy(bufX, activeMenuItem);
-                                ChangeConsoleColor(Blue, LightCyan);
+                                ChangeConsoleColor(Black, LightGreen);
+                                cout << pipes[numberPipe - 1].lenght;
+                                gotoxy(bufX, activeMenuItem);
+                                break;
                             }
                         }
                         break;
@@ -682,48 +685,65 @@ void EditPipe(vector <Pipe>& pipes)
                             getline(cin, buf2);
                             if (СheckingNumbersStringDouble(buf2))
                             {
-                                pipes[buf1 - 1].diameter = stoi(buf2);
+                                pipes[numberPipe - 1].diameter = stod(buf2);
+                                gotoxy(bufX, activeMenuItem);
+                                ShowConsoleCursor(false);
                                 break;
                             }
                             else
                             {   // Выводим ошибку и заново делаем ввод
-                                gotoxy(bufX + 5, activeMenuItem);
+                                gotoxy(bufX + 13, activeMenuItem);
                                 SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
                                 cout << "\t Введите вещественное положительное число!";
-                                ChangeConsoleColor(Blue, LightCyan);
+                                ShowConsoleCursor(false);
+                                Sleep(1200);
                                 gotoxy(bufX, activeMenuItem);
-                                buf2 = to_string(pipes[buf1 - 1].diameter); break;
-                                cout << " ";
-                                SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
-                                for (int i = 0; i < (buf2.size() - 1); ++i) { cout << " "; }
+                                for (int i = 0; i < buf2.size() + 63; ++i) { cout << " "; }
                                 gotoxy(bufX, activeMenuItem);
-                                ChangeConsoleColor(Blue, LightCyan);
+                                ChangeConsoleColor(Black, LightGreen);
+                                cout << pipes[numberPipe - 1].diameter;
+                                gotoxy(bufX, activeMenuItem);
+                                break;
                             }
-                        }
-                        break;
-                    case 5:
-                        bufKey = _getch();
-                        if ((bufKey == 75) || (bufKey == 77))
-                        {
-                            SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
-                            cout << "          ";
-                            gotoxy(bufX, activeMenuItem);
-                            ChangeConsoleColor(LightCyan, Blue);
-                            if (pipes[buf1 - 1].signRepair == "В ремонте")
-                            {
-                                cout << "Исправна";
-                            }
-                            else
-                            {
-                                cout << "В ремонте";
-                            }
-
-
                         }
                         break;
                     }
                     break;
                 }
+                case LEFT:                        
+                    SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
+                    cout << "          ";
+                    gotoxy(bufX, activeMenuItem);
+                    ChangeConsoleColor(Black, LightGreen);
+                    if (pipes[numberPipe - 1].signRepair == "В ремонте")
+                    {
+                        pipes[numberPipe - 1].signRepair = "Исправна";
+                        cout << pipes[numberPipe - 1].signRepair;
+                    }
+                    else
+                    {
+                        pipes[numberPipe - 1].signRepair = "В ремонте";
+                        cout << pipes[numberPipe - 1].signRepair;
+                    }
+                    gotoxy(bufX, activeMenuItem);
+                    break;
+                case RIGHT:
+                    SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
+                    cout << "          ";
+                    gotoxy(bufX, activeMenuItem);
+                    ChangeConsoleColor(Black, LightGreen);
+                    if (pipes[numberPipe - 1].signRepair == "В ремонте")
+                    {
+                        pipes[numberPipe - 1].signRepair = "Исправна";
+                        cout << pipes[numberPipe - 1].signRepair;
+                    }
+                    else
+                    {
+                        pipes[numberPipe - 1].signRepair = "В ремонте";
+                        cout << pipes[numberPipe - 1].signRepair;
+                    }
+                    gotoxy(bufX, activeMenuItem);
+                    break;
             }
             if (flag1)
             {
@@ -743,16 +763,279 @@ void EditPipe(vector <Pipe>& pipes)
             gotoxy(bufX, bufActiveMenuItem);
             switch (bufActiveMenuItem)
             {
-            case 2: cout << pipes[buf1 - 1].id; break;
-            case 3: cout << pipes[buf1 - 1].lenght; break;
-            case 4: cout << pipes[buf1 - 1].diameter; break;
-            case 5: cout << pipes[buf1 - 1].signRepair; break;
+            case 2: cout << pipes[numberPipe - 1].id; break;
+            case 3: cout << pipes[numberPipe - 1].lenght; break;
+            case 4: cout << pipes[numberPipe - 1].diameter; break;
+            case 5: cout << pipes[numberPipe - 1].signRepair; break;
             }
             // Переход
             gotoxy(bufX, activeMenuItem);
         }
         SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
     }
+    system("cls");
+}
+
+void EditKC(vector <KC>& KC)
+{
+    HANDLE hStdOut;
+    CONSOLE_SCREEN_BUFFER_INFO start_attribute;
+    bool flag1 = false; int activeMenuItem, bufActiveMenuItem, key, numberKC, bufX, bufY; string buf2; const int menuItems = 5;
+    system("cls");
+    cout << " Количество КС: " << KC.size() << "\n\n";
+    // Спрашиваем номер КС и возвращаем номер КС "buf1"
+    while (true)
+    {
+        if (KC.size() == 0)
+        {
+            cout << " Компрессорные станции еще не построены!";
+            flag1 = true;
+            break;
+        }
+        cout << " Введите номер КС: ";
+        getline(cin, buf2);
+        if (СheckingNumbersStringInt(buf2))
+        {
+            numberKC = stoi(buf2);
+            if (numberKC <= KC.size())
+            {
+                break;
+            }
+            else
+            {
+                cout << " Введите номер КС не превышающий количество КС!\n";
+            }
+        }
+        else
+        {
+            cout << " Введите целое положительное число! \n";
+        }
+    }
+    if (flag1)
+    {
+        BackMenu();
+    }
+    else
+    {
+        // Выводим данные по данной КС и иструкции для пользователя 
+        system("cls");
+        cout << "\t                    Компрессорная стация № " << numberKC << endl
+            << "\n\t                      id: "; bufX = getXcoord(); bufY = getYcoord(); cout << KC[numberKC - 1].id << endl
+            << "\t                Название: " << KC[numberKC - 1].name << endl
+            << "\t            Кол-во цехов: " << KC[numberKC - 1].numberWorkshops << endl
+            << "\tКоличество рабочих цехов: " << KC[numberKC - 1].numberWorkshopsOperation << endl;
+        gotoxy(0, 8);
+        cout << "Используйте стрелки 'Вверх' и 'Вниз' для перемещения по данным" << endl
+            << "Чтобы изменить данные и ввести новые нажмите 'Enter' " << endl
+            << "Чтобы изменить признак 'в ремонте' выберите этот пункт и стрелками выберете состояние " << endl
+            << "Для выхода в меню нажмите 'Escape'";
+        gotoxy(bufX, bufY);
+        activeMenuItem = bufY;
+        ShowConsoleCursor(false);
+        // Работа с данными
+        while (true)
+        {
+            // Запоминаем цвет консоли
+            GetConsoleColors(hStdOut, start_attribute);
+            bufActiveMenuItem = activeMenuItem;
+
+            // Перекрашиваем данную клетку
+            ChangeConsoleColor(Black, LightGreen);
+            switch (activeMenuItem)
+            {
+            case 2: cout << pipes[numberPipe - 1].id; break;
+            case 3: cout << pipes[numberPipe - 1].lenght; break;
+            case 4: cout << pipes[numberPipe - 1].diameter; break;
+            case 5: cout << pipes[numberPipe - 1].signRepair; break;
+            }
+            gotoxy(bufX, activeMenuItem);
+
+            // Считывание   кода стрелки
+            key = _getch();
+            if (key == -32)
+            {
+                key = _getch();
+            }
+            // Обработа введенной клавиши
+            switch (key)
+            {
+            case ESC:  flag1 = true; break; // Клавиша Escape
+            case UP:  --activeMenuItem; break; // Клавиша стрелка вверх
+            case DOWN:  ++activeMenuItem; break; // Клавиша стрелка вниз
+            case ENTER: // Клавиша Enter
+                // Вводим новые данные с проверкой
+            {
+
+                // Приводим к виду ввода
+                gotoxy(bufX, activeMenuItem);
+                ChangeConsoleColor(LightGreen, Black);
+                switch (activeMenuItem)
+                {
+                case 2: buf2 = to_string(pipes[numberPipe - 1].id); break;
+                case 3: buf2 = to_string(pipes[numberPipe - 1].lenght); break;
+                case 4: buf2 = to_string(pipes[numberPipe - 1].diameter); break;
+                case 5: buf2 = pipes[numberPipe - 1].signRepair; break;
+                }
+                for (int i = 0; i < buf2.size(); ++i) { cout << " "; }
+                gotoxy(bufX, activeMenuItem);
+                ChangeConsoleColor(Black, LightGreen);
+                ShowConsoleCursor(true);
+                switch (activeMenuItem)
+                {
+                case 2:
+                    // Изменение id
+                    while (true)
+                    {
+                        getline(cin, buf2);
+                        if (СheckingNumbersStringInt(buf2))
+                        {
+                            pipes[numberPipe - 1].id = stoi(buf2);
+                            gotoxy(bufX, activeMenuItem);
+                            ShowConsoleCursor(false);
+                            break;
+                        }
+                        else
+                        {   // Выводим ошибку и заново делаем ввод
+                            gotoxy(bufX + 13, activeMenuItem);
+                            SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
+                            cout << "\t Введите целое положительное число!";
+                            ShowConsoleCursor(false);
+                            Sleep(1200);
+                            gotoxy(bufX, activeMenuItem);
+                            for (int i = 0; i < buf2.size() + 63; ++i) { cout << " "; }
+                            gotoxy(bufX, activeMenuItem);
+                            ChangeConsoleColor(Black, LightGreen);
+                            cout << pipes[numberPipe - 1].id;
+                            gotoxy(bufX, activeMenuItem);
+                            break;
+                        }
+                    }
+                    break;
+                case 3:
+                    // Изменение Длины
+                    while (true)
+                    {
+                        getline(cin, buf2);
+                        if (СheckingNumbersStringDouble(buf2))
+                        {
+                            pipes[numberPipe - 1].lenght = stod(buf2);
+                            gotoxy(bufX, activeMenuItem);
+                            ShowConsoleCursor(false);
+                            break;
+                        }
+                        else
+                        {   // Выводим ошибку и заново делаем ввод
+                            gotoxy(bufX + 13, activeMenuItem);
+                            SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
+                            cout << "\t Введите вещественное положительное число!";
+                            ShowConsoleCursor(false);
+                            Sleep(1200);
+                            gotoxy(bufX, activeMenuItem);
+                            for (int i = 0; i < buf2.size() + 63; ++i) { cout << " "; }
+                            gotoxy(bufX, activeMenuItem);
+                            ChangeConsoleColor(Black, LightGreen);
+                            cout << pipes[numberPipe - 1].lenght;
+                            gotoxy(bufX, activeMenuItem);
+                            break;
+                        }
+                    }
+                    break;
+                case 4:
+                    // Изменение Диаметра трубы
+                    while (true)
+                    {
+                        getline(cin, buf2);
+                        if (СheckingNumbersStringDouble(buf2))
+                        {
+                            pipes[numberPipe - 1].diameter = stod(buf2);
+                            gotoxy(bufX, activeMenuItem);
+                            ShowConsoleCursor(false);
+                            break;
+                        }
+                        else
+                        {   // Выводим ошибку и заново делаем ввод
+                            gotoxy(bufX + 13, activeMenuItem);
+                            SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
+                            cout << "\t Введите вещественное положительное число!";
+                            ShowConsoleCursor(false);
+                            Sleep(1200);
+                            gotoxy(bufX, activeMenuItem);
+                            for (int i = 0; i < buf2.size() + 63; ++i) { cout << " "; }
+                            gotoxy(bufX, activeMenuItem);
+                            ChangeConsoleColor(Black, LightGreen);
+                            cout << pipes[numberPipe - 1].diameter;
+                            gotoxy(bufX, activeMenuItem);
+                            break;
+                        }
+                    }
+                    break;
+                }
+                break;
+            }
+            case LEFT:
+                SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
+                cout << "          ";
+                gotoxy(bufX, activeMenuItem);
+                ChangeConsoleColor(Black, LightGreen);
+                if (pipes[numberPipe - 1].signRepair == "В ремонте")
+                {
+                    pipes[numberPipe - 1].signRepair = "Исправна";
+                    cout << pipes[numberPipe - 1].signRepair;
+                }
+                else
+                {
+                    pipes[numberPipe - 1].signRepair = "В ремонте";
+                    cout << pipes[numberPipe - 1].signRepair;
+                }
+                gotoxy(bufX, activeMenuItem);
+                break;
+            case RIGHT:
+                SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
+                cout << "          ";
+                gotoxy(bufX, activeMenuItem);
+                ChangeConsoleColor(Black, LightGreen);
+                if (pipes[numberPipe - 1].signRepair == "В ремонте")
+                {
+                    pipes[numberPipe - 1].signRepair = "Исправна";
+                    cout << pipes[numberPipe - 1].signRepair;
+                }
+                else
+                {
+                    pipes[numberPipe - 1].signRepair = "В ремонте";
+                    cout << pipes[numberPipe - 1].signRepair;
+                }
+                gotoxy(bufX, activeMenuItem);
+                break;
+            }
+            if (flag1)
+            {
+                break;
+            }
+            // Обработка выхода за границы
+            if (activeMenuItem < bufY)
+            {
+                activeMenuItem = bufY;
+            }
+            else if (activeMenuItem > bufY + (menuItems - 1))
+            {
+                activeMenuItem = bufY + (menuItems - 1);
+            }
+            // Красим назад перед переходом и возвращаем 
+            SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
+            gotoxy(bufX, bufActiveMenuItem);
+            switch (bufActiveMenuItem)
+            {
+            case 2: cout << pipes[numberPipe - 1].id; break;
+            case 3: cout << pipes[numberPipe - 1].lenght; break;
+            case 4: cout << pipes[numberPipe - 1].diameter; break;
+            case 5: cout << pipes[numberPipe - 1].signRepair; break;
+            }
+            // Переход
+            gotoxy(bufX, activeMenuItem);
+        }
+        SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
+    }
+    system("cls");
 }
 
 int main()
@@ -760,7 +1043,7 @@ int main()
     // Инициализация массивов труб и КС-ок
     vector <Pipe> pipes; pipes.resize(0); vector <KC> KC; KC.resize(0);
 
-    // Меню 
+    // Меню и задаем название меню 
     vector <string> Menu = { "Добавить трубу",
                              "Добавить КС",
                              "Просмотр всех объектов",
@@ -768,9 +1051,8 @@ int main()
                              "Редактировать КС",
                              "Сохранить",
                              "Загрузить",
-                             "Выход",
-                             "435345",
-                             "dfgdsfg"};
+                             "Выход", };
+    SetConsoleTitle(L"Лабораторная работа №1 Баркова Игоря - создание модели трубопроводного транспорта газа или нефти");
 
     // Включение русского языка в консоли
     setlocale(LC_CTYPE, "rus");
