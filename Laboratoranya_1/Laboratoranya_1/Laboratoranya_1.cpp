@@ -6,7 +6,29 @@
 #include <sstream> // Для getline()
 #include <windows.h> // Для парса стринга в инты или даблы, для скрывания курсора
 #include <fstream> // Для работы с файлами
+#include <string> // Для работы со строками
+
 using namespace std;
+
+enum Menu
+{
+    addPipe = 0,
+    addKC  = 1,
+    showObjects = 2,
+    editPipe = 3,
+    editKC = 4,
+    save = 5,
+    download = 6,
+    Exit = 7
+};
+
+enum ConsoleKey
+{
+     UP = 72,
+     DOWN = 80,
+     ESC = 27,
+     ENTER = 13
+};
 
 enum ConsoleColor
 {
@@ -37,7 +59,7 @@ struct Pipe
     string signRepair; // Признак "в ремонте"
 };
 // Компрессорная станция 
-struct CompressorStation
+struct KC
 {
     int id; // Идентификатор трубы
     string name; // Название станции
@@ -45,6 +67,49 @@ struct CompressorStation
     int numberWorkshopsOperation; // Количество цехов в работе
     int effectiveness; // Эффективность станции
 };
+/// <summary>
+/// gotoxy для новых C++
+/// </summary>
+/// <param name="x"></param>
+/// <param name="y"></param>
+void gotoxy(int x, int y)
+{
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    COORD c = { x, y };
+    SetConsoleCursorPosition(hStdOut, c);
+}
+/// <summary>
+/// Узнать координату х
+/// </summary>
+/// <returns></returns>
+int getXcoord()
+{
+    CONSOLE_SCREEN_BUFFER_INFO info_x;
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    GetConsoleScreenBufferInfo(hStdOut, &info_x);
+    return info_x.dwCursorPosition.X;
+}
+/// <summary>
+/// Узнать координату y
+/// </summary>
+/// <returns></returns>
+int getYcoord()
+{
+    CONSOLE_SCREEN_BUFFER_INFO info_y;
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    GetConsoleScreenBufferInfo(hStdOut, &info_y);
+    return info_y.dwCursorPosition.Y;
+}
+/// <summary>
+/// Метод изменяет цвет текста и фона
+/// </summary>
+/// <param name="text">Цвет текста</param>
+/// <param name="background">Цвет заднего фона</param>
+void ChangeConsoleColor(ConsoleColor text, ConsoleColor background)
+{
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE); //Получение дескриптора консоли
+    SetConsoleTextAttribute(hStdOut, (WORD)((background << 4) | text));  //Изменение заднего фона и шрифта консоли
+}
 /// <summary>
 /// Метод проверет строку на цифры
 /// </summary>
@@ -99,33 +164,28 @@ bool СheckingNumbersStringDouble(string str)
     return true;
 }
 /// <summary>
+/// Метод устанавливает размеры консоли по умолчанию
+/// </summary>
+void SetConsoleAttributes()
+{
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    COORD crd = { 95, 26 };
+    SMALL_RECT src = { 0, 0, crd.X - 1, crd.Y - 1 };
+    SetConsoleWindowInfo(hStdOut, true, &src);
+    SetConsoleScreenBufferSize(hStdOut, crd);
+    ChangeConsoleColor(LightGreen, Black);
+}
+/// <summary>
 /// Метод скрывает курсор
 /// </summary>
 /// <param name="showFlag">True - мигать, False - скрыть</param>
 void ShowConsoleCursor(bool showFlag)
 {
     HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
-
     CONSOLE_CURSOR_INFO     cursorInfo;
-
     GetConsoleCursorInfo(out, &cursorInfo);
     cursorInfo.bVisible = showFlag; // set the cursor visibility
     SetConsoleCursorInfo(out, &cursorInfo);
-}
-/// <summary>
-/// Метод изменяет цвет текста и фона
-/// </summary>
-/// <param name="text">Цвет текста</param>
-/// <param name="background">Цвет заднего фона</param>
-void ChangeConsoleColor(int text, int background)
-{
-    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE); //Получение дескриптора консоли
-    SetConsoleTextAttribute(hStdOut, (WORD)((background << 4) | text)); //Изменение заднего фона и шрифта консоли 
-}
-void ChangeConsoleColor(int text, ConsoleColor background)
-{
-    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE); //Получение дескриптора консоли
-    SetConsoleTextAttribute(hStdOut, (WORD)((background << 4) | text));  //Изменение заднего фона и шрифта консоли
 }
 /// <summary>
 /// Запоминание цвета фона и текста текущей консоли
@@ -137,19 +197,78 @@ void GetConsoleColors(HANDLE& hStdOut, CONSOLE_SCREEN_BUFFER_INFO& start_attribu
     GetConsoleScreenBufferInfo(hStdOut, &start_attribute); // Запоминание начальных параметров
 }
 /// <summary>
-/// Метод для перехода на страницу с меню 
+/// Метод для возвращения в меню после выполнения метода
 /// </summary>
-void Gotomenu()
+void BackMenu()
 {
-    cout << "\t\t Меню" << endl
-        << "\t 1. Добавить трубу" << endl
-        << "\t 2. Добавить КС" << endl
-        << "\t 3. Просмотр всех объектов" << endl
-        << "\t 4. Редактировать трубу" << endl
-        << "\t 5. Редактировать КС" << endl
-        << "\t 6. Сохранить" << endl
-        << "\t 7. Загрузить" << endl
-        << "       Esc. Выход" << endl;
+    int buf;
+    cout << "\n\n\n Нажмите Escape чтобы вернуться в меню";
+    while (true)
+    {
+        buf = _getch();
+        if (buf == 27)
+        {
+            break;
+        }
+        else
+        {
+            cout << "\n Нажмите Escape для выхода!";
+        }
+    }
+}
+/// <summary>
+/// Метод для перехода на страницу с меню с возвратом первой строчки меню 
+/// </summary>
+void ShowMenu(vector <string> Menu, int* firstLineMenu, int bufActiveMenu)
+{
+    SetConsoleAttributes();
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+    GetConsoleScreenBufferInfo(hStdOut, &csbiInfo);
+    int xCenter = (csbiInfo.srWindow.Right - csbiInfo.srWindow.Left) / 2; int yCenter = (csbiInfo.srWindow.Bottom - csbiInfo.srWindow.Top) / 2; int xBuf; // находим координаты х и y центра окна
+    *firstLineMenu = yCenter - Menu.size() / 2; //Возвращаем первую строчку меню
+    for (int i = 0; i < Menu.size(); ++i)
+    {
+        if (i + *firstLineMenu != bufActiveMenu)
+            { ChangeConsoleColor(Green, Black); }
+        else
+            { ChangeConsoleColor(LightGreen, Black); }
+
+        xBuf = (xCenter - Menu[i].size() / 2); // Находим координату х каждой строки для написания по середине
+        gotoxy(xBuf, i + *firstLineMenu);
+        cout << Menu[i];
+    }
+    ChangeConsoleColor(LightGreen, Black);
+
+}
+/// <summary>
+/// Метод для перехода на страницу с меню без возврата первой строчки меню
+/// </summary>
+void ShowMenu(vector <string> Menu, int bufActiveMenu)
+{
+    SetConsoleAttributes();
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+    GetConsoleScreenBufferInfo(hStdOut, &csbiInfo);
+    int xCenter = (csbiInfo.srWindow.Right - csbiInfo.srWindow.Left) / 2; int yCenter = (csbiInfo.srWindow.Bottom - csbiInfo.srWindow.Top) / 2; int xBuf; // находим координаты х и y центра окна
+    int firstLineMenu = yCenter - Menu.size() / 2; // Первая строчка меню
+    for (int i = 0; i < Menu.size(); ++i)
+    {
+        if (i + firstLineMenu != bufActiveMenu)
+        {
+            ChangeConsoleColor(Green, Black);
+        }
+        else
+        {
+            ChangeConsoleColor(LightGreen, Black);
+        }
+
+        xBuf = (xCenter - Menu[i].size() / 2); // Находим координату х каждой строки для написания по середине
+        gotoxy(xBuf, i + firstLineMenu);
+        cout << Menu[i];
+    }
+    ChangeConsoleColor(LightGreen, Black);
+
 }
 /// <summary>
 /// Метод добавляет трубу
@@ -227,18 +346,19 @@ void AddPipe(vector <Pipe>& pipes)
             cout << " Нажмите на одну из предложенных клавиш!";
         }
     }
+    system("cls");
 }
 /// <summary>
 /// Метод добавляет компрессорную станцию
 /// </summary>
 /// <param name="pipes">Массив КС-ок</param>
-void AddCompressorStation(vector <CompressorStation>& compressorStations)
+void AddKC(vector <KC>& KC)
 {
     system("cls");
     // Буферные переменные
     int buf1; string buf;
-    compressorStations.resize(compressorStations.size() + 1);
-    cout << "\tКомпрессорная станция №" << compressorStations.size() << "\n\n";
+    KC.resize(KC.size() + 1);
+    cout << "\tКомпрессорная станция №" << KC.size() << "\n\n";
     // Добавление id
     while (true)
     {
@@ -246,7 +366,7 @@ void AddCompressorStation(vector <CompressorStation>& compressorStations)
         getline(cin, buf);
         if (СheckingNumbersStringInt(buf))
         {
-            compressorStations[compressorStations.size() - 1].id = stoi(buf);
+            KC[KC.size() - 1].id = stoi(buf);
             break;
         }
         else
@@ -261,7 +381,7 @@ void AddCompressorStation(vector <CompressorStation>& compressorStations)
         getline(cin, buf);
         if (buf.size() > 0)
         {
-            compressorStations[compressorStations.size() - 1].name = buf;
+            KC[KC.size() - 1].name = buf;
             break;
         }
         else
@@ -276,7 +396,7 @@ void AddCompressorStation(vector <CompressorStation>& compressorStations)
         getline(cin, buf);
         if (СheckingNumbersStringInt(buf))
         {
-            compressorStations[compressorStations.size() - 1].numberWorkshops = stoi(buf);
+            KC[KC.size() - 1].numberWorkshops = stoi(buf);
             break;
         }
         else
@@ -292,9 +412,9 @@ void AddCompressorStation(vector <CompressorStation>& compressorStations)
         if (СheckingNumbersStringInt(buf))
         {
             buf1 = stoi(buf);
-            if (buf1 <= compressorStations[compressorStations.size() - 1].numberWorkshops)
+            if (buf1 <= KC[KC.size() - 1].numberWorkshops)
             {
-                compressorStations[compressorStations.size() - 1].numberWorkshopsOperation = buf1;
+                KC[KC.size() - 1].numberWorkshopsOperation = buf1;
                 break;
             }
             else
@@ -314,7 +434,7 @@ void AddCompressorStation(vector <CompressorStation>& compressorStations)
         getline(cin, buf);
         if (СheckingNumbersStringInt(buf))
         {
-            compressorStations[compressorStations.size() - 1].effectiveness = stoi(buf);
+            KC[KC.size() - 1].effectiveness = stoi(buf);
             break;
         }
         else
@@ -322,6 +442,7 @@ void AddCompressorStation(vector <CompressorStation>& compressorStations)
             cout << " Введите целое положительное число! \n";
         }
     }
+    system("cls");
 }
 /// <summary>
 /// Метод рисует вывод всех труб
@@ -341,13 +462,13 @@ void ShowAllPipes(vector <Pipe> pipes)
 /// Метод рисует вывод всех компрессорных станций
 /// </summary>
 /// <param name="pipes">Массив КС-ок</param>
-void ShowAllCompressionStations(vector <CompressorStation> compressorStations)
+void ShowAllCompressionStations(vector <KC> KC)
 {
     cout << "\t\t\tКомпрессорные станции - КС\n" << endl;
     cout << " Номер КС" << "\tid" << "    Название" << "\t\tКол-во цехов" << "\tЦехов в работе" << "\t Эффект-ть" << endl;
-    for (int i = 0; i < compressorStations.size(); ++i)
+    for (int i = 0; i < KC.size(); ++i)
     {
-        cout << "   " << i + 1 << "\t\t" << compressorStations[i].id << "\t" << compressorStations[i].name << "\t\t" << compressorStations[i].numberWorkshops << "\t\t" << compressorStations[i].numberWorkshopsOperation << "\t\t" << compressorStations[i].effectiveness << endl;
+        cout << "   " << i + 1 << "\t\t" << KC[i].id << "\t" << KC[i].name << "\t\t" << KC[i].numberWorkshops << "\t\t" << KC[i].numberWorkshopsOperation << "\t\t" << KC[i].effectiveness << endl;
     }
     cout << "\n";
 }
@@ -355,68 +476,21 @@ void ShowAllCompressionStations(vector <CompressorStation> compressorStations)
 /// Метод показывает все объекты
 /// </summary>
 /// <returns></returns>
-void ShowAllObjects(const vector <Pipe>& pipes, const vector <CompressorStation>& compressorStations)
+void ShowAllObjects(const vector <Pipe>& pipes, const vector <KC>& KC)
 {
     system("cls");
     ShowAllPipes(pipes);
-    ShowAllCompressionStations(compressorStations);
+    ShowAllCompressionStations(KC);
+    BackMenu();
+    system("cls");
 }
-/// <summary>
-/// Метод для возвращения в меню
-/// </summary>
-void BackMenu()
-{
-    int buf;
-    cout << "\n\n\n Нажмите Escape чтобы вернуться в меню";
-    while (true)
-    {
-        buf = _getch();
-        if (buf == 27)
-        {
-            break;
-        }
-        else
-        {
-            cout << "\n Нажмите Escape для выхода!";
-        }
-    }
-}
-/// <summary>
-/// gotoxy для новых C++
-/// </summary>
-/// <param name="x"></param>
-/// <param name="y"></param>
-void gotoxy(int x, int y)
-{
-    COORD c = { x, y };
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
-}
-/// <summary>
-/// Узнать координату х
-/// </summary>
-/// <returns></returns>
-int getXcoord()
-{
-    CONSOLE_SCREEN_BUFFER_INFO info_x;
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info_x);
-    return info_x.dwCursorPosition.X;
-}
-/// <summary>
-/// Узнать координату y
-/// </summary>
-/// <returns></returns>
-int getYcoord()
-{
-    CONSOLE_SCREEN_BUFFER_INFO info_y;
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info_y);
-    return info_y.dwCursorPosition.Y;
-}
+
 /// <summary>
 /// Метод сохраняет данные
 /// </summary>
 /// <param name="pipes">Трубы</param>
 /// <param name="compressorStations">КС-ки</param>
-void SaveData(const vector <Pipe>& pipes, const vector <CompressorStation>& compressorStations)
+void SaveData(const vector <Pipe>& pipes, const vector <KC>& KC)
 {
     ofstream fout;
     fout.open("data.txt", ios::out);
@@ -429,9 +503,9 @@ void SaveData(const vector <Pipe>& pipes, const vector <CompressorStation>& comp
     fout << "\n";
     fout << "\t\t\tКомпрессорные станции - КС\n" << endl;
     fout << " Номер КС" << "\tid" << "    Название" << "\t\tКол-во цехов" << "\tЦехов в работе" << "\tЭффект-ть" << endl;
-    for (int i = 0; i < compressorStations.size(); ++i)
+    for (int i = 0; i < KC.size(); ++i)
     {
-        fout << "   " << i + 1 << "\t\t" << compressorStations[i].id << "\t" << compressorStations[i].name << "\t\t" << compressorStations[i].numberWorkshops << "\t\t" << compressorStations[i].numberWorkshopsOperation << "\t\t" << compressorStations[i].effectiveness << endl;
+        fout << "   " << i + 1 << "\t\t" << KC[i].id << "\t" << KC[i].name << "\t\t" << KC[i].numberWorkshops << "\t\t" << KC[i].numberWorkshopsOperation << "\t\t" << KC[i].effectiveness << endl;
     }
     fout << "\n";
     fout.close();
@@ -682,65 +756,99 @@ void EditPipe(vector <Pipe>& pipes)
 }
 
 int main()
-{   // Создание Массива труб и массива КС-ок
-    vector <Pipe> pipes; pipes.resize(0); vector <CompressorStation> compressorStations; compressorStations.resize(0);
+{
+    // Инициализация массивов труб и КС-ок
+    vector <Pipe> pipes; pipes.resize(0); vector <KC> KC; KC.resize(0);
+
+    // Меню 
+    vector <string> Menu = { "Добавить трубу",
+                             "Добавить КС",
+                             "Просмотр всех объектов",
+                             "Редактировать трубу",
+                             "Редактировать КС",
+                             "Сохранить",
+                             "Загрузить",
+                             "Выход",
+                             "435345",
+                             "dfgdsfg"};
+
     // Включение русского языка в консоли
     setlocale(LC_CTYPE, "rus");
-    // Буферные переменные
-    bool flag1, flag2 = false; int key;
+
+    // Выключаем курсор
+    ShowConsoleCursor(false);
+
+    // Переменная для сохранения кода клавиши
+    int keyMenu;
+
+    // Устанавливаем меню, находим первую строчку меню и скрываем курсор
+    SetConsoleAttributes();
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+    GetConsoleScreenBufferInfo(hStdOut, &csbiInfo);
+    int firstLineMenu; int activeMenu = (csbiInfo.srWindow.Bottom - csbiInfo.srWindow.Top) / 2 - Menu.size() / 2 ;
+    ShowMenu(Menu, &firstLineMenu, activeMenu);
+    ShowConsoleCursor(false);
+
     // Работа с меню
     while (true)
     {
-        system("cls");
-        Gotomenu();
-        key = _getch();
+        ShowMenu(Menu, activeMenu);
+        ShowConsoleCursor(false);
+
+        // Спрашиваем клавишу и считываем ее код
+        keyMenu = _getch();
+        if (keyMenu == -32)
+            { keyMenu = _getch();}
+
         //Проверяем нажатую клавишу
-        while (true)
+        switch (keyMenu)
         {
-            flag1 = false;
-            switch (key)
-            {
-            case 49: // Добавить трубу на клавишу 1
-                AddPipe(pipes);
-                flag1 = true;
+            case ESC:
+                exit(0);
                 break;
-            case 50: // Добавить комрессорную станцию на клавишу 2
-                AddCompressorStation(compressorStations);
-                flag1 = true;
+            case DOWN:
+                if (activeMenu < firstLineMenu + Menu.size() - 1)
+                { ++activeMenu; }                                                              
                 break;
-            case 51:    // Просмотр всех объектов на клавишу 3
-                ShowAllObjects(pipes, compressorStations);
-                BackMenu();
-                flag1 = true;
+            case UP:
+                if (activeMenu > firstLineMenu)
+                { --activeMenu; }
                 break;
-            case 52:    // Редактировать трубу на клавишу 4
-                EditPipe(pipes);
-                flag1 = true;
-                break;
-            case 53:    // клавиша 5
-                flag1 = true;
-                break;
-            case 54:    // Сохранить все данные в файлы на клавишу 6
-                SaveData(pipes, compressorStations);
-                flag1 = true;
-                break;
-            case 55:    // клавиша 7
-                flag1 = true;
-                break;
-            case 27:    // клавиша Escape
-                flag1 = true, flag2 = true;
-                break;
-            default:
-                flag1 = true;
-            }
-            if (flag1)
-            {
-                break;
-            }
-        }
-        if (flag2)
-        {
-            break;
+            case ENTER:
+                ShowConsoleCursor(true);
+                if (firstLineMenu + addPipe == activeMenu)
+                {
+                    AddPipe(pipes); // Добавить трубу
+                }
+                else if (firstLineMenu + addKC == activeMenu)
+                {
+                    AddKC(KC); // Добавить КС
+                }
+                else if (firstLineMenu + showObjects == activeMenu)
+                {
+                    ShowAllObjects(pipes, KC); // Показать все объекты
+                }
+                else if (firstLineMenu + editPipe == activeMenu)
+                {
+                    EditPipe(pipes); // Редактировать Трубу
+                }
+                else if (firstLineMenu + editKC == activeMenu)
+                {
+                   
+                }
+                else if (firstLineMenu + save == activeMenu)
+                {
+                    SaveData(pipes, KC); // Сохранить
+                }
+                else if (firstLineMenu + download == activeMenu)
+                {
+                    
+                }
+                else if (firstLineMenu + Exit == activeMenu)
+                {
+                    exit(0); // Выход 
+                }
         }
     }
     return 0;
