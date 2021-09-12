@@ -110,6 +110,93 @@ int getYcoord()
 }
 
 /// <summary>
+/// Метод создает динамический двумерный массив и возвращает его адрес в памяти
+/// </summary>
+/// <param name="KC">Количество строк и столбцов массива</param>
+string** CreateTwoDimensionalDynamicArrayStr(int lines, int columns)
+{
+    string** array = new string * [lines];
+    for (int i = 0; i < lines; ++i)
+    {
+        array[i] = new string[columns];
+    }
+    return array;
+}
+
+void ClearTwoDimensionalDynamicArrayStr(string** array, int lines)
+{
+    for (int i = 0; i < lines; ++i)
+    {
+        delete[] array[i];
+    }
+    delete[] array;
+}
+
+void DrawCell(int width, int height, char symbol)
+{
+    int bufx, bufy;
+    for (int i = 0; i < width; ++i)
+    {
+        cout << symbol;
+    }
+    bufx = getXcoord() - 1; bufy = getYcoord();
+    for (int i = 0; i < height; ++i)
+    {
+        gotoxy(bufx, bufy + i);
+        cout << symbol << endl;
+    }
+    gotoxy(bufx - (width - 1), bufy);
+    bufx = getXcoord(); bufy = getYcoord();
+    for (int i = 0; i < height; ++i)
+    {
+        gotoxy(bufx, bufy + i);
+        cout << symbol << endl;
+    }
+    gotoxy(bufx, bufy + (height - 1));
+    for (int i = 0; i < width; ++i)
+    {
+        cout << symbol;
+    }
+}
+
+void DrawTable(int lines, vector <int> heightLines, int columns, vector <int> widthColumns, int left, int top)
+{
+    int bufX1, bufY1, bufX2;
+    gotoxy(left, top);
+    for (int i = 0; i < lines; ++i)
+    {
+        bufX1 = getXcoord();
+        bufY1 = getYcoord();
+        for (int j = 0; j < columns; ++j)
+        {
+            bufX2 = getXcoord();
+            DrawCell(widthColumns[j], heightLines[i], '#');
+            gotoxy(bufX2 + (widthColumns[j] - 1), bufY1);
+        }
+        gotoxy(bufX1, bufY1 + (heightLines[i] - 1));
+    }
+}
+
+void FillTable(string** array, vector <int> heightLines, vector <int> widthColumns, int left, int top)
+{
+    int bufX1, bufY1, bufX2;
+    gotoxy(left, top);
+    for (int i = 0; i < heightLines.size(); ++i)
+    {
+        bufX1 = getXcoord();
+        bufY1 = getYcoord();
+        for (int j = 0; j < widthColumns.size(); ++j)
+        {
+            bufX2 = getXcoord();
+            gotoxy(bufX2 + widthColumns[j] / 2 - array[i][j].size() / 2, bufY1 + heightLines[i] / 2);
+            cout << array[i][j];
+            gotoxy(bufX2 + (widthColumns[j] - 1), bufY1);
+        }
+        gotoxy(bufX1, bufY1 + (heightLines[i] - 1));
+    }
+}
+
+/// <summary>
 /// Метод изменяет цвет текста и фона
 /// </summary>
 /// <param name="text">Цвет текста</param>
@@ -466,44 +553,54 @@ void AddKC(vector <KC>& KC)
 }
 
 /// <summary>
-/// Метод рисует вывод всех труб
-/// </summary>
-/// <param name="pipes">Массив труб</param>
-void ShowAllPipes(vector <Pipe> pipes)
-{
-    cout << "\n\t\t\t\tТрубы\n" << endl;
-    cout << " Номер трубы" << "\tid" << "\tДлина" << "\t\tДиаметр" << "\t\tПризнак в ремонте" << endl;
-    for (int i = 0; i < pipes.size(); ++i)
-    {
-        cout << "   " << i + 1 << "\t\t" << pipes[i].id << "\t" << pipes[i].lenght << "\t\t" << pipes[i].diameter << "\t\t" << pipes[i].signRepair << endl;
-    }
-    cout << "\n";
-}
-
-/// <summary>
-/// Метод рисует вывод всех компрессорных станций
-/// </summary>
-/// <param name="pipes">Массив КС-ок</param>
-void ShowAllCompressionStations(vector <KC> KC)
-{
-    cout << "\t\t\tКомпрессорные станции - КС\n" << endl;
-    cout << " Номер КС" << "\tid" << "    Название" << "\t\tКол-во цехов" << "\tЦехов в работе" << "\t Эффект-ть" << endl;
-    for (int i = 0; i < KC.size(); ++i)
-    {
-        cout << "   " << i + 1 << "\t\t" << KC[i].id << "\t" << KC[i].name << "\t\t" << KC[i].numberWorkshops << "\t\t" << KC[i].numberWorkshopsOperation << "\t\t" << KC[i].effectiveness << endl;
-    }
-    cout << "\n";
-}
-
-/// <summary>
 /// Метод показывает все объекты
 /// </summary>
 /// <returns></returns>
 void ShowAllObjects(const vector <Pipe>& pipes, const vector <KC>& KC)
 {
     system("cls");
-    ShowAllPipes(pipes);
-    ShowAllCompressionStations(KC);
+
+    // Данные из структуры переводим в двумерный массив и подготавливаем размеры строк и столбцов таблицы
+    string** array1 = CreateTwoDimensionalDynamicArrayStr(pipes.size() + 1, 5);
+    array1[0][0] = "Номер"; array1[0][1] = "id"; array1[0][2] = "Длина"; array1[0][3] = "Диаметр"; array1[0][4] = "Признак 'в ремонте'";
+    for (int i = 1; i < pipes.size() + 1; ++i) { array1[i][0] = to_string(i); }
+    for (int i = 1; i < pipes.size() + 1; ++i) { array1[i][1] = to_string(pipes[i - 1].id); }
+    for (int i = 1; i < pipes.size() + 1; ++i) { array1[i][2] = to_string(pipes[i - 1].lenght); }
+    for (int i = 1; i < pipes.size() + 1; ++i) { array1[i][3] = to_string(pipes[i - 1].diameter); }
+    for (int i = 1; i < pipes.size() + 1; ++i) { array1[i][4] = pipes[i - 1].signRepair; }
+    vector <int> heightLines; heightLines.resize(pipes.size() + 1); for (int i = 0; i < pipes.size() + 1; ++i) { heightLines[i] = 5; }
+    vector <int> widthColumns; widthColumns.resize(5); widthColumns[0] = 9; widthColumns[1] = 8; widthColumns[2] = 15; widthColumns[3] = 15; widthColumns[4] = 25;
+
+    // Рисуем трубы
+    DrawTable(pipes.size() + 1, heightLines, 5, widthColumns, 2, 2);
+    FillTable(array1, heightLines, widthColumns, 2, 2);
+
+    // Очищаем память от вспомогательного массива
+    ClearTwoDimensionalDynamicArrayStr(array1, pipes.size() + 1);
+
+    // Перемещаемся в свободное место и запоминаем координаты
+    gotoxy(2, 2 + 5 * (pipes.size() + 1) + 3);
+    int bufX = getXcoord(), bufY = getYcoord();
+
+    // Данные из структуры переводим в двумерный массив и подготавливаем размеры строк и столбцов таблицы
+    string** array2 = CreateTwoDimensionalDynamicArrayStr(KC.size() + 1, 6);
+    array2[0][0] = "Номер"; array2[0][1] = "id"; array2[0][2] = "Название"; array2[0][3] = "Кол-во цехов"; array2[0][4] = "Рабочих цехов"; array2[0][5] = "Эффективность";
+    for (int i = 1; i < KC.size() + 1; ++i) { array2[i][0] = to_string(i); }
+    for (int i = 1; i < KC.size() + 1; ++i) { array2[i][1] = to_string(KC[i - 1].id); }
+    for (int i = 1; i < KC.size() + 1; ++i) { array2[i][2] = KC[i - 1].name; }
+    for (int i = 1; i < KC.size() + 1; ++i) { array2[i][3] = to_string(KC[i - 1].numberWorkshops); }
+    for (int i = 1; i < KC.size() + 1; ++i) { array2[i][4] = to_string(KC[i - 1].numberWorkshopsOperation); }
+    for (int i = 1; i < KC.size() + 1; ++i) { array2[i][5] = to_string(KC[i - 1].effectiveness); }
+    vector <int> heightLines1; heightLines1.resize(KC.size() + 1); for (int i = 0; i < KC.size() + 1; ++i) { heightLines1[i] = 5; }
+    vector <int> widthColumns1; widthColumns1.resize(6); widthColumns1[0] = 9; widthColumns1[1] = 8; widthColumns1[2] = 15; widthColumns1[3] = 18; widthColumns1[4] = 19; widthColumns1[5] = 17;
+
+    // Рисуем КС-ки
+    DrawTable(KC.size() + 1, heightLines1, 6, widthColumns1, bufX, bufY);
+    FillTable(array2, heightLines1, widthColumns1, bufX, bufY);
+
+    // Очищаем память от вспомогательного массива
+    ClearTwoDimensionalDynamicArrayStr(array2, KC.size() + 1);
+
     BackMenu();
     system("cls");
 }
@@ -533,7 +630,10 @@ void SaveData(const vector <Pipe>& pipes, const vector <KC>& KC)
     fout << "\n";
     fout.close();
 }
-
+/// <summary>
+/// Метод редактирует одну выбранную трубу
+/// </summary>
+/// <param name="pipes">Массив труб</param>
 void EditPipe(vector <Pipe>& pipes)
 {
     HANDLE hStdOut;
@@ -740,9 +840,9 @@ void EditPipe(vector <Pipe>& pipes)
                     break;
                 }
                 case LEFT:
-                    PlaySoundA("ui_repairweapon_02.wav", NULL, SND_ASYNC);
                     if (activeMenuItem == 5)
                     {
+                        PlaySoundA("ui_repairweapon_02.wav", NULL, SND_ASYNC);
                         SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
                         cout << "          ";
                         gotoxy(bufX, activeMenuItem);
@@ -761,9 +861,10 @@ void EditPipe(vector <Pipe>& pipes)
                     }
                     break;
                 case RIGHT:
-                    PlaySoundA("ui_repairweapon_02.wav", NULL, SND_ASYNC);
+
                     if (activeMenuItem == 5)
                     {
+                        PlaySoundA("ui_repairweapon_02.wav", NULL, SND_ASYNC);
                         SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
                         cout << "          ";
                         gotoxy(bufX, activeMenuItem);
@@ -813,6 +914,10 @@ void EditPipe(vector <Pipe>& pipes)
     system("cls");
 }
 
+/// <summary>
+/// Метод редактирует одну выбранную КС-ку
+/// </summary>
+/// <param name="KC">Массив КС-ок</param>
 void EditKC(vector <KC>& KC)
 {
     HANDLE hStdOut;
