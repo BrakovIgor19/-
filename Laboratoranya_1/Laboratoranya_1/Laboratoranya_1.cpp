@@ -1,6 +1,7 @@
 ﻿// Лабораторная работа № 1
 #define _CRT_SECURE_NO_WARNINGS // не помню зачем
 #include <iostream>
+#include <iomanip> // Для setW()
 #include <conio.h> // Для считывания клавиши
 #include <clocale> // Для русской локализации
 #include <vector> // Для динамического массива
@@ -11,6 +12,7 @@
 #include <dos.h> // Для Sleep()
 #include <mmsystem.h> // Для звука
 #include <ctime> // Для рандома
+#include "Laboratoranya_1.h"
 
 using namespace std;
 
@@ -175,6 +177,35 @@ void AddColorGreen()
     info.ColorTable[10] = RGB(19, 246, 118);
     info.ColorTable[2] = RGB(11, 102, 46);
     SetConsoleScreenBufferInfoEx(hConsole, &info);
+}
+
+int FindMaxLengthVectorStr(const vector<string>& vectorStr)
+{
+    int maxLength = -1;
+    for (int i = 0; i < vectorStr.size(); ++i)
+    {
+        if ((int)vectorStr[i].size() > maxLength)
+        {
+            maxLength = vectorStr[i].size();
+        }
+    }
+    return maxLength;
+}
+
+void OutputVectorStringColumnAlignedRight(const vector <string> &vectorStr, const vector <string>& vectorDate, int left, int top)
+{
+
+
+    // Найдем строку максимально длины
+    int maxLength = FindMaxLengthVectorStr(vectorStr);
+
+    // Выводим массив строк
+    for (int i = 0; i < vectorStr.size(); ++i)
+    {
+        // Переходим Переходим на новую строку и выводим 
+        gotoxy(left, top + i);
+        cout << setw(maxLength) << vectorStr[i] << " " << vectorDate[i];
+    }
 }
 
 /// <summary>
@@ -505,10 +536,21 @@ void ShowConsoleCursor(bool showFlag)
 /// Запоминание цвета фона и текста текущей консоли
 /// </summary>
 /// <param name="pipes"></param>
-void GetConsoleColors(HANDLE &hStdOut, CONSOLE_SCREEN_BUFFER_INFO &start_attribute)
+void GetConsole(HANDLE &hStdOut, CONSOLE_SCREEN_BUFFER_INFO &start_attribute)
 {
     hStdOut = GetStdHandle(STD_OUTPUT_HANDLE); // Получение дескриптора консоли
     GetConsoleScreenBufferInfo(hStdOut, &start_attribute); // Запоминание начальных параметров
+}
+
+void PaintTextBackground(const int& x, const int& y, const string& str, ConsoleColor text, ConsoleColor background)
+{
+    HANDLE Console; CONSOLE_SCREEN_BUFFER_INFO start_attribute;
+    GetConsole(Console, start_attribute);
+    gotoxy(x, y);
+    SetConsoleColor(text, background);
+    cout << str;
+    gotoxy(x, y);
+    SetConsoleTextAttribute(Console, start_attribute.wAttributes);
 }
 
 void ShowError(const int& errorCode, const string& str)
@@ -878,25 +920,72 @@ void ShowAllObjects(const vector <Pipe>& pipes, const vector <KC>& KC)
 /// </summary>
 /// <param name="pipes">Трубы</param>
 /// <param name="compressorStations">КС-ки</param>
-void SaveData(const vector <Pipe>& pipes, const vector <KC>& KC)
+void SaveData(const vector <Pipe> &pipes, const vector <KC> &KC)
 {
     ofstream fout;
     fout.open("data.txt", ios::out);
-    fout << "\n\t\t\t\tТрубы\n" << endl;
-    fout << " Номер трубы" << "\tid" << "\tДлина" << "\t\tДиаметр" << "\t\tПризнак в ремонте" << endl;
-    for (int i = 0; i < pipes.size(); ++i)
+    if (fout.is_open())
     {
-        fout << "   " << i + 1 << "\t\t" << pipes[i].id << "\t" << pipes[i].lenght << "\t\t" << pipes[i].diameter << "\t\t" << pipes[i].signRepair << endl;
+        fout << pipes.size() << endl;
+        fout << KC.size() << endl;
+        for (int i = 0; i < pipes.size(); ++i)
+        {
+            fout << pipes[i].id << endl;
+            fout << pipes[i].diameter << endl;
+            fout << pipes[i].lenght << endl;
+            fout << pipes[i].signRepair << endl;
+        }
+        for (int i = 0; i < KC.size(); ++i)
+        {
+            fout << KC[i].id << endl;
+            fout << KC[i].name << endl;
+            fout << KC[i].numberWorkshops << endl;
+            fout << KC[i].numberWorkshopsOperation << endl;
+            fout << KC[i].effectiveness << endl;
+        }
     }
-    fout << "\n";
-    fout << "\t\t\tКомпрессорные станции - КС\n" << endl;
-    fout << " Номер КС" << "\tid" << "    Название" << "\t\tКол-во цехов" << "\tЦехов в работе" << "\tЭффект-ть" << endl;
-    for (int i = 0; i < KC.size(); ++i)
-    {
-        fout << "   " << i + 1 << "\t\t" << KC[i].id << "\t" << KC[i].name << "\t\t" << KC[i].numberWorkshops << "\t\t" << KC[i].numberWorkshopsOperation << "\t\t" << KC[i].effectiveness << endl;
-    }
-    fout << "\n";
     fout.close();
+}
+
+void DownloadData(vector <Pipe> &pipes, vector <KC> &KC)
+{
+    string str;
+    ifstream fin;
+    fin.open("data.txt", ios::out);
+    if (fin.is_open())
+    {
+        getline(fin, str);
+        pipes.resize(stoi(str));
+        getline(fin, str);
+        KC.resize(stoi(str));
+        for (int i = 0; i < pipes.size(); ++i)
+        {
+            getline(fin, str);
+            pipes[i].id = stoi(str);
+            getline(fin, str);
+            pipes[i].diameter = stoi(str);
+            getline(fin, str);
+            pipes[i].lenght = stod(str);
+            getline(fin, str);
+            pipes[i].signRepair = str;
+
+        }
+        for (int i = 0; i < KC.size(); ++i)
+        {
+            getline(fin, str);
+            KC[i].id = stoi(str);
+            getline(fin, str);
+            KC[i].name = str;
+            getline(fin, str);
+            KC[i].numberWorkshops = stoi(str);
+            getline(fin, str);
+            KC[i].numberWorkshopsOperation = stoi(str);
+            getline(fin, str);
+            KC[i].effectiveness = stoi(str);
+
+        }
+    }
+    fin.close();
 }
 
 /// <summary>
@@ -905,9 +994,17 @@ void SaveData(const vector <Pipe>& pipes, const vector <KC>& KC)
 /// <param name="pipes">Массив труб</param>
 void EditPipe(vector <Pipe>& pipes)
 {
-    HANDLE hStdOut;
-    CONSOLE_SCREEN_BUFFER_INFO start_attribute;
-    bool flag1 = false; int activeMenuItem, bufActiveMenuItem, key, numberPipe, bufX, bufY; string buf2; const int menuItems = 4;
+    HANDLE hStdOut; CONSOLE_SCREEN_BUFFER_INFO start_attribute; hStdOut = GetStdHandle(STD_OUTPUT_HANDLE); GetConsoleScreenBufferInfo(hStdOut, &start_attribute);
+    bool flag1 = false;
+    int firstLineMenu, lastLineMenu, xCenter, bufMaxLength, inactiveMenuItem, activeMenuItem, bufActiveMenuItem, key, numberPipe, bufYInst, XMenuItem, bufY;
+    string bufStr;
+    const int menuItems = 4;
+    vector <string> vectorStr = { "id:", "Длина:", "Диаметр:", "Признак в Ремонте:" };
+    vector <string> vectorInst = { "Используйте стрелки 'Вверх' и 'Вниз' для перемещения по данным",
+                                   "Чтобы изменить данные и ввести новые нажмите 'Enter'",
+                                   "Признак 'В ремонте' изменяется стрелками -> <-",
+                                   "Для выхода в меню нажмите 'Escape'" };
+
     system("cls");
     cout << " Количество труб: " << pipes.size() << "\n\n";
 
@@ -919,250 +1016,263 @@ void EditPipe(vector <Pipe>& pipes)
         system("cls");
         return;
     }
-    
 
-    // Спрашиваем номер трубы и возвращаем номер трубы "buf1"
+
+    // Спрашиваем номер трубы и возвращаем номер трубы 
     cout << " Введите номер трубы: ";
     while (true)
     {
-        ReadStringWithoutMovingCursor(buf2);
-        if (СheckingStringNumberInt(buf2) == 0)
+        ReadStringWithoutMovingCursor(bufStr);
+        if (СheckingStringNumberInt(bufStr) == 0)
         {
-            numberPipe = stoi(buf2);
+            numberPipe = stoi(bufStr);
             if (numberPipe <= pipes.size())
             {
                 break;
             }
             else
             {
-                ShowError(6, buf2);
+                ShowError(6, bufStr);
             }
         }
         else
         {
-            ShowError(СheckingStringNumberInt(buf2), buf2);
-        } 
+            ShowError(СheckingStringNumberInt(bufStr), bufStr);
+        }
+    }
+    system("cls");
+
+    // Выводим данные по данной трубе и иструкции для пользователя
+
+    // Выводим номер трубы
+    xCenter = start_attribute.dwSize.X / 2;
+    gotoxy(xCenter, 4);
+    WriteTextCenter("Труба №" + to_string(numberPipe), getXcoord(), getYcoord());
+
+    // Ищем позицию левего верхнего угла для вывод даных
+    bufMaxLength = FindMaxLengthVectorStr(vectorStr);
+    gotoxy(xCenter - bufMaxLength, 6);
+
+    // Находим первую линию меню
+    firstLineMenu = getYcoord();
+
+    // Выводим данные
+    vector <string> vectorData = { to_string(pipes[numberPipe - 1].id), to_string(pipes[numberPipe - 1].lenght), to_string(pipes[numberPipe - 1].diameter), pipes[numberPipe - 1].signRepair };
+    OutputVectorStringColumnAlignedRight(vectorStr, vectorData, getXcoord(), getYcoord());
+
+    // Находим последнюю линию меню
+    lastLineMenu = firstLineMenu + (vectorData.size() - 1);
+
+    // Выводим инструкции
+    gotoxy(xCenter, 6 + vectorStr.size() + 3);
+    bufYInst = getYcoord();
+    for (int i = 0; i < vectorInst.size(); ++i)
+    {
+        WriteTextCenter(vectorInst[i], xCenter, bufYInst + i);
     }
 
-    // Выводим данные по данной трубе и иструкции для пользователя 
-    system("cls");
-    cout << "\t                 Труба № " << numberPipe << endl
-        << "\n\t                 id: "; bufX = getXcoord(); bufY = getYcoord(); cout << pipes[numberPipe - 1].id << endl
-        << "\t              Длина: " << pipes[numberPipe - 1].lenght << endl
-        << "\t            Диаметр: " << pipes[numberPipe - 1].diameter << endl
-        << "\tПризнак 'в ремонте': " << pipes[numberPipe - 1].signRepair << endl;
-    gotoxy(0, 8);
-    cout << "Используйте стрелки 'Вверх' и 'Вниз' для перемещения по данным" << endl
-        << "Чтобы изменить данные и ввести новые нажмите 'Enter' " << endl
-        << "Чтобы изменить признак 'в ремонте' выберите этот пункт и стрелками выберете состояние " << endl
-        << "Для выхода в меню нажмите 'Escape'";
-    gotoxy(bufX, bufY);
-    activeMenuItem = bufY;
+    // Запоминаем абсциссу данных меню
+    gotoxy(xCenter + 1, 6);
+    XMenuItem = getXcoord(); 
+
+    // Подсвечиваем первую строчку
+    PaintTextBackground(XMenuItem, firstLineMenu, vectorData[0], Black, LightGreen);
+
+    // Задаем активное меню
+    activeMenuItem = firstLineMenu; inactiveMenuItem = activeMenuItem;
+
+    // Скрываем курсор
     ShowConsoleCursor(false);
 
     // Работа с данными
     while (true)
     {
-        ShowConsoleCursor(false);
-
-        // Запоминаем цвет консоли
-        GetConsoleColors(hStdOut, start_attribute);
-        bufActiveMenuItem = activeMenuItem;
-
-        // Перекрашиваем данную клетку
-        SetConsoleColor(Black, LightGreen);
-        switch (activeMenuItem)
-        {
-            case 2: cout << pipes[numberPipe - 1].id; break;
-            case 3: cout << pipes[numberPipe - 1].lenght; break;
-            case 4: cout << pipes[numberPipe - 1].diameter; break;
-            case 5: cout << pipes[numberPipe - 1].signRepair; break;
-        }
-        gotoxy(bufX, activeMenuItem);
-
         // Считывание   кода стрелки
         key = _getch();
         if (key == -32)
         {
             key = _getch();
         }
-        // Обработка введенной клавиши
+       
+        //Обработка введенной клавиши
         switch (key)
         {
-            case ESC: PlaySoundA("ui_menu_cancel.wav", NULL, SND_ASYNC);  flag1 = true; break; // Клавиша Escape
-            case UP:  PlaySoundA("ui_pipboy_highlight.wav", NULL, SND_ASYNC);  --activeMenuItem; break; // Клавиша стрелка вверх
-            case DOWN:  PlaySoundA("ui_pipboy_highlight.wav", NULL, SND_ASYNC);  ++activeMenuItem; break; // Клавиша стрелка вниз
-            case ENTER:  PlaySoundA("ui_pipboy_select.wav", NULL, SND_ASYNC); // Клавиша Enter
-                // Вводим новые данные с проверкой
-            {
-
-                // Приводим к виду ввода
-                gotoxy(bufX, activeMenuItem);
+            case ESC: // Клавиша Escape
+                PlaySoundA("ui_menu_cancel.wav", NULL, SND_ASYNC);
                 SetConsoleColor(LightGreen, Black);
-                switch (activeMenuItem)
+                flag1 = true;
+                break; 
+            case UP: // Клавиша стрелка вверх
+                if (activeMenuItem > firstLineMenu)
                 {
-                    case 2: buf2 = to_string(pipes[numberPipe - 1].id); break;
-                    case 3: buf2 = to_string(pipes[numberPipe - 1].lenght); break;
-                    case 4: buf2 = to_string(pipes[numberPipe - 1].diameter); break;
-                    case 5: buf2 = pipes[numberPipe - 1].signRepair; break;
-                }
-                for (int i = 0; i < buf2.size(); ++i) { cout << " "; }
-                gotoxy(bufX, activeMenuItem);
-                SetConsoleColor(Black, LightGreen);
-                ShowConsoleCursor(true);
-                switch (activeMenuItem)
-                {
-                case 2:
-                    // Изменение id
-                    while (true)
-                    {
-                        ReadStringWithoutMovingCursor(buf2);
-                        ShowConsoleCursor(false);
-                        if (СheckingStringNumberInt(buf2) == 0)
-                        {
-                            PlaySoundA("ui_hacking_passgood.wav", NULL, SND_ASYNC);
-                            pipes[numberPipe - 1].id = stoi(buf2);
-                            gotoxy(bufX, activeMenuItem);
-                            ShowConsoleCursor(false);
-                            break;
-                        }
-                        else
-                        { 
-                            // Выводим ошибку и заново делаем ввод
-                            ShowError(СheckingStringNumberInt(buf2), buf2);
-                            SetConsoleColor(Black, LightGreen);
-                            cout << pipes[numberPipe - 1].id;
-                            gotoxy(bufX, activeMenuItem);
-                            break;
-                        }
-                    }
-                    break;
-                case 3:
-                    // Изменение Длины
-                    while (true)
-                    {
-                        ReadStringWithoutMovingCursor(buf2);
-                        ShowConsoleCursor(false);
-                        if (СheckingStringNumberReal(buf2) == 0)
-                        {
-                            PlaySoundA("ui_hacking_passgood.wav", NULL, SND_ASYNC);
-                            pipes[numberPipe - 1].lenght = stod(buf2);
-                            gotoxy(bufX, activeMenuItem);
-                            ShowConsoleCursor(false);
-                            break;
-                        }
-                        else
-                        { 
-                            // Выводим ошибку и заново делаем ввод
-                            ShowError(СheckingStringNumberReal(buf2), buf2);
-                            SetConsoleColor(Black, LightGreen);
-                            cout << pipes[numberPipe - 1].lenght;
-                            gotoxy(bufX, activeMenuItem);
-                            break;
-                        }
-                    }
-                    break;
-                case 4:
-                    // Изменение Диаметра трубы
-                    while (true)
-                    {
-                        ReadStringWithoutMovingCursor(buf2);
-                        ShowConsoleCursor(false);
-                        if (СheckingStringNumberInt(buf2) == 0)
-                        {
-                            PlaySoundA("ui_hacking_passgood.wav", NULL, SND_ASYNC);
-                            pipes[numberPipe - 1].diameter = stod(buf2);
-                            gotoxy(bufX, activeMenuItem);
-                            ShowConsoleCursor(false);
-                            break;
-                        }
-                        else
-                        {
-                            // Выводим ошибку и заново делаем ввод
-                            ShowError(СheckingStringNumberInt(buf2), buf2);
-                            SetConsoleColor(Black, LightGreen);
-                            cout << pipes[numberPipe - 1].diameter;
-                            gotoxy(bufX, activeMenuItem);
-                            break;
-                        }
-                    }
-                    break;
+                    PlaySoundA("ui_pipboy_highlight.wav", NULL, SND_ASYNC);
+                    inactiveMenuItem = activeMenuItem;
+                    --activeMenuItem;
+                    
                 }
                 break;
-            }
+            case DOWN: // Клавиша стрелка вниз
+                if (activeMenuItem < lastLineMenu)
+                {
+                    PlaySoundA("ui_pipboy_highlight.wav", NULL, SND_ASYNC);
+                    inactiveMenuItem = activeMenuItem;
+                    ++activeMenuItem;
+                }
+                break;
+            case ENTER: // Клавиша Enter
+                PlaySoundA("ui_pipboy_select.wav", NULL, SND_ASYNC);
+
+                // Вводим новые данные с проверкой
+
+                // Приводим к виду ввода
+                bufStr = vectorData[activeMenuItem - firstLineMenu];
+                SetConsoleColor(LightGreen, Black);
+                for (int i = 0; i < bufStr.size(); ++i) { cout << " "; }
+                SetConsoleColor(Black, LightGreen);
+                gotoxy(XMenuItem, activeMenuItem);
+                ShowConsoleCursor(true);
+
+                // Вводим данные с проверкой
+                switch (activeMenuItem - firstLineMenu)
+                {
+                    case 0:
+                        // Изменение id
+                        while (true)
+                        {
+
+                            ReadStringWithoutMovingCursor(bufStr);
+                            if (СheckingStringNumberInt(bufStr) == 0)
+                            {
+                                PlaySoundA("ui_hacking_passgood.wav", NULL, SND_ASYNC);
+                                ShowError(0, bufStr);
+                                vectorData[0] = bufStr;
+                                pipes[numberPipe - 1].id = stoi(bufStr);
+                                gotoxy(XMenuItem, activeMenuItem);
+                                break;
+                            }
+                            else
+                            {
+                                // Выводим ошибку и заново делаем ввод
+                                ShowError(СheckingStringNumberInt(bufStr), bufStr);
+                                cout << pipes[numberPipe - 1].id;
+                                gotoxy(XMenuItem, activeMenuItem);
+                                break;
+                            }
+                        }
+                        break;
+                    case 1:
+                        // Изменение Длины
+                        while (true)
+                        {
+                            ReadStringWithoutMovingCursor(bufStr);
+                            if (СheckingStringNumberReal(bufStr) == 0)
+                            {
+                                PlaySoundA("ui_hacking_passgood.wav", NULL, SND_ASYNC);
+                                ShowError(0, bufStr);
+                                vectorData[1] = bufStr;
+                                pipes[numberPipe - 1].lenght = stod(bufStr);
+                                gotoxy(XMenuItem, activeMenuItem);
+                                break;
+                            }
+                            else
+                            { 
+                                // Выводим ошибку и заново делаем ввод
+                                ShowError(СheckingStringNumberReal(bufStr), bufStr);
+                                cout << pipes[numberPipe - 1].lenght;
+                                gotoxy(XMenuItem, activeMenuItem);
+                                break;
+                            }
+                        }
+                        break;
+                    case 2:
+                        // Изменение Диаметра трубы
+                        while (true)
+                        {
+                            ReadStringWithoutMovingCursor(bufStr);
+                            if (СheckingStringNumberInt(bufStr) == 0)
+                            {
+                                PlaySoundA("ui_hacking_passgood.wav", NULL, SND_ASYNC);
+                                ShowError(0, bufStr);
+                                vectorData[2] = bufStr;
+                                pipes[numberPipe - 1].diameter = stoi(bufStr);
+                                gotoxy(XMenuItem, activeMenuItem);
+                                break;
+                            }
+                            else
+                            {
+                                // Выводим ошибку и заново делаем ввод
+                                ShowError(СheckingStringNumberInt(bufStr), bufStr);
+                                cout << pipes[numberPipe - 1].diameter;
+                                gotoxy(XMenuItem, activeMenuItem);
+                                break;
+                            }
+                        }
+                        break;                    
+                }
+                ShowConsoleCursor(false);
+                break;
             case LEFT:
-                if (activeMenuItem == 5)
+                if (activeMenuItem - firstLineMenu == 3)
                 {
                     PlaySoundA("ui_repairweapon_02.wav", NULL, SND_ASYNC);
                     SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
                     cout << "          ";
-                    gotoxy(bufX, activeMenuItem);
+                    gotoxy(XMenuItem, activeMenuItem);
                     SetConsoleColor(Black, LightGreen);
                     if (pipes[numberPipe - 1].signRepair == "В ремонте")
                     {
+                        vectorData[3] = "Исправна";
                         pipes[numberPipe - 1].signRepair = "Исправна";
                         cout << pipes[numberPipe - 1].signRepair;
                     }
                     else
                     {
+                        vectorData[3] = "В ремонте";
                         pipes[numberPipe - 1].signRepair = "В ремонте";
                         cout << pipes[numberPipe - 1].signRepair;
                     }
-                    gotoxy(bufX, activeMenuItem);
+                    gotoxy(XMenuItem, activeMenuItem);
                 }
                 break;
             case RIGHT:
-
-                if (activeMenuItem == 5)
+                if (activeMenuItem - firstLineMenu == 3)
                 {
                     PlaySoundA("ui_repairweapon_02.wav", NULL, SND_ASYNC);
                     SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
                     cout << "          ";
-                    gotoxy(bufX, activeMenuItem);
+                    gotoxy(XMenuItem, activeMenuItem);
                     SetConsoleColor(Black, LightGreen);
                     if (pipes[numberPipe - 1].signRepair == "В ремонте")
                     {
+                        vectorData[3] = "Исправна";
                         pipes[numberPipe - 1].signRepair = "Исправна";
                         cout << pipes[numberPipe - 1].signRepair;
                     }
                     else
                     {
+                        vectorData[3] = "В ремонте";
                         pipes[numberPipe - 1].signRepair = "В ремонте";
                         cout << pipes[numberPipe - 1].signRepair;
                     }
-                    gotoxy(bufX, activeMenuItem);
+                    gotoxy(XMenuItem, activeMenuItem);
                 }
                 break;
         }
+
+        // Открашиваем неактивое меню
+        PaintTextBackground(XMenuItem, inactiveMenuItem, vectorData[inactiveMenuItem - firstLineMenu], LightGreen, Black);
+
+        // Закрашиваем активное меню
+        PaintTextBackground(XMenuItem, activeMenuItem, vectorData[activeMenuItem - firstLineMenu], Black, LightGreen);
+
         if (flag1)
         {
+            system("cls");
             break;
         }
-        // Обработка выхода за границы
-        if (activeMenuItem < bufY)
-        {
-            activeMenuItem = bufY;
-        }
-        else if (activeMenuItem > bufY + (menuItems - 1))
-        {
-            activeMenuItem = bufY + (menuItems - 1);
-        }
-        // Красим назад перед переходом и возвращаем 
-        SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);
-        gotoxy(bufX, bufActiveMenuItem);
-        switch (bufActiveMenuItem)
-        {
-        case 2: cout << pipes[numberPipe - 1].id; break;
-        case 3: cout << pipes[numberPipe - 1].lenght; break;
-        case 4: cout << pipes[numberPipe - 1].diameter; break;
-        case 5: cout << pipes[numberPipe - 1].signRepair; break;
-        }
-        // Переход
-        gotoxy(bufX, activeMenuItem);
     }
 
-    SetConsoleTextAttribute(hStdOut, start_attribute.wAttributes);    
-    system("cls");
+
 }
 
 /// <summary>
@@ -1227,7 +1337,7 @@ void EditKC(vector <KC>& KC)
     while (true)
     {
         // Запоминаем цвет консоли
-        GetConsoleColors(hStdOut, start_attribute);
+        GetConsole(hStdOut, start_attribute);
         bufActiveMenuItem = activeMenuItem;
         ShowConsoleCursor(false);
 
@@ -1535,7 +1645,8 @@ int main()
                         SaveData(pipes, KC); // Сохранить
                         break;
                 case download: 
-
+                        DownloadData(pipes, KC);
+                        break;
                 case Exit:
                         PlaySoundA("ui_menu_cancel.wav", NULL, SND_ASYNC);
                         Sleep(1000);
