@@ -12,7 +12,7 @@
 #include <dos.h> // Для Sleep()
 #include <mmsystem.h> // Для звука
 #include <ctime> // Для рандома
-#include "Laboratoranya_1.h"
+#include "Barkov_Igor_AA_20_05_Laboratoranya_1.h"
 
 using namespace std;
 
